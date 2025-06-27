@@ -15,6 +15,12 @@ const screens = [
     description: "Simple text generation with prompts",
     href: "/basic-generation",
   },
+  {
+    id: "structured-data",
+    title: "Structured Data",
+    description: "Generate structured JSON data with schemas",
+    href: "/structured-data",
+  },
 ];
 
 export default function Index() {

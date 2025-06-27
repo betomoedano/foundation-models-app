@@ -6,13 +6,14 @@ class ExpoFoundationModelsModule extends NativeModule {
   // Foundation Models Methods - Web Implementation (Not Supported)
   async checkAvailability(): Promise<FoundationModelsAvailability> {
     const userAgent = navigator.userAgent;
-    
+
     return {
       isAvailable: false,
       deviceSupported: false,
       osVersion: `Web Browser - ${userAgent}`,
       frameworkVersion: undefined,
-      reason: "Foundation Models framework is only available on iOS 26+ with Apple Intelligence. Web platform is not supported."
+      reason:
+        "Foundation Models framework is only available on iOS 26+ with Apple Intelligence. Web platform is not supported.",
     };
   }
 }

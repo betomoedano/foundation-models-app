@@ -20,3 +20,20 @@ export interface GenerationResponse {
     model: string;
   };
 }
+
+// Structured Data Generation Types
+export interface StructuredGenerationRequest {
+  prompt: string;
+  schemaType: "userProfile" | "product" | "event";
+}
+
+export interface StructuredGenerationResponse {
+  data: any;
+  schemaType: string;
+  metadata: {
+    tokenCount: number;
+    generationTime: number;
+    model: string;
+  };
+  error?: string;
+}

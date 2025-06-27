@@ -1,8 +1,13 @@
 import { Stack } from "expo-router";
+import { View } from "react-native";
 
 export default function RootLayout() {
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerBackground: () => <View style={{ backgroundColor: "red" }} />,
+      }}
+    >
       <Stack.Screen
         name="index"
         options={{
@@ -20,6 +25,13 @@ export default function RootLayout() {
         name="basic-generation"
         options={{
           title: "Basic Generation",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="structured-data"
+        options={{
+          title: "Structured Data",
           presentation: "card",
         }}
       />
