@@ -69,3 +69,11 @@ This is an Expo React Native application with a custom native module for iOS Fou
 **Package Manager:** Uses Bun (lockfile: bun.lockb)
 
 **Platform Support:** Primary iOS focus, with Android/Web stubs
+
+## UI/UX Development Notes
+
+- Use with scroll views instead of safe area: `contentInsetAdjustmentBehavior="automatic"`
+
+## Development Reminders
+
+- Remember to use boxshadow instead of old shadow stuff
