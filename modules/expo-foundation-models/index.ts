@@ -2,4 +2,3 @@
 // and on native platforms to ExpoFoundationModelsModule.ts
 export * from "./src/ExpoFoundationModels.types";
 export { default } from "./src/ExpoFoundationModelsModule";
-export { default as ExpoFoundationModelsView } from "./src/ExpoFoundationModelsView";

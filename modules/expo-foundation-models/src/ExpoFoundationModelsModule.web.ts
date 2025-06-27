@@ -1,18 +1,19 @@
 import { NativeModule, registerWebModule } from "expo";
 
-import { ChangeEventPayload } from "./ExpoFoundationModels.types";
+import { FoundationModelsAvailability } from "./ExpoFoundationModels.types";
 
-type ExpoFoundationModelsModuleEvents = {
-  onChange: (params: ChangeEventPayload) => void;
-};
-
-class ExpoFoundationModelsModule extends NativeModule<ExpoFoundationModelsModuleEvents> {
-  PI = Math.PI;
-  async setValueAsync(value: string): Promise<void> {
-    this.emit("onChange", { value });
-  }
-  hello() {
-    return "Hello world! 👋";
+class ExpoFoundationModelsModule extends NativeModule {
+  // Foundation Models Methods - Web Implementation (Not Supported)
+  async checkAvailability(): Promise<FoundationModelsAvailability> {
+    const userAgent = navigator.userAgent;
+    
+    return {
+      isAvailable: false,
+      deviceSupported: false,
+      osVersion: `Web Browser - ${userAgent}`,
+      frameworkVersion: undefined,
+      reason: "Foundation Models framework is only available on iOS 26+ with Apple Intelligence. Web platform is not supported."
+    };
   }
 }
 

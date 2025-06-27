@@ -1,48 +1,60 @@
 import ExpoModulesCore
+import Foundation
+
+// Import FoundationModels framework if available
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 public class ExpoFoundationModelsModule: Module {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
   public func definition() -> ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoFoundationModels')` in JavaScript.
     Name("ExpoFoundationModels")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants([
-      "PI": Double.pi
-    ])
-
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello world! 👋"
+    // Foundation Models Methods
+    AsyncFunction("checkAvailability") { () -> [String: Any] in
+      return await self.getFoundationModelsAvailability()
     }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(ExpoFoundationModelsView.self) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { (view: ExpoFoundationModelsView, url: URL) in
-        if view.webView.url != url {
-          view.webView.load(URLRequest(url: url))
-        }
+  }
+  
+  // MARK: - Foundation Models Availability Check
+  
+  private func getFoundationModelsAvailability() async -> [String: Any] {
+    let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+    
+    #if canImport(FoundationModels)
+    // Check if we're on iOS 26+ and have Apple Intelligence support
+    if #available(iOS 26.0, macOS 26.0, *) {
+      // Try to access the SystemLanguageModel to check availability
+      let systemModel = SystemLanguageModel.default
+      let isAvailable = systemModel.isAvailable
+      
+      var result: [String: Any] = [
+        "isAvailable": isAvailable,
+        "deviceSupported": true,
+        "osVersion": osVersion,
+        "frameworkVersion": "1.0"
+      ]
+      
+      if !isAvailable {
+        result["reason"] = "Foundation Models not available on this device. Requires Apple Intelligence support."
       }
-
-      Events("onLoad")
+      
+      return result
+    } else {
+      return [
+        "isAvailable": false,
+        "deviceSupported": false,
+        "osVersion": osVersion,
+        "reason": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
+      ]
     }
+    #else
+    return [
+      "isAvailable": false,
+      "deviceSupported": false,
+      "osVersion": osVersion,
+      "reason": "Foundation Models framework not available in this build"
+    ]
+    #endif
   }
 }

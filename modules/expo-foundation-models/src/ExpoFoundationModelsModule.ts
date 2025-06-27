@@ -1,11 +1,10 @@
 import { NativeModule, requireNativeModule } from "expo";
 
-import { ExpoFoundationModelsModuleEvents } from "./ExpoFoundationModels.types";
+import { FoundationModelsAvailability } from "./ExpoFoundationModels.types";
 
-declare class ExpoFoundationModelsModule extends NativeModule<ExpoFoundationModelsModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+declare class ExpoFoundationModelsModule extends NativeModule {
+  // Foundation Models Methods
+  checkAvailability(): Promise<FoundationModelsAvailability>;
 }
 
 // This call loads the native module object from the JSI.
