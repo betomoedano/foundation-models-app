@@ -7,7 +7,6 @@ export default function RootLayout() {
         name="index"
         options={{
           title: "Foundation Models Demo",
-          headerLargeTitle: true,
         }}
       />
       <Stack.Screen

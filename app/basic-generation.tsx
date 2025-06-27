@@ -1,4 +1,7 @@
-import { useState } from "react";
+import ExpoFoundationModelsModule, {
+  GenerationResponse,
+} from "@/modules/expo-foundation-models";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Button,
@@ -11,9 +14,24 @@ import {
 
 export default function BasicGenerationScreen() {
   const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState("");
+  const [response, setResponse] = useState<GenerationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkAvailability();
+  }, []);
+
+  const checkAvailability = async () => {
+    try {
+      const availability = await ExpoFoundationModelsModule.checkAvailability();
+      setIsAvailable(availability.isAvailable);
+    } catch (err) {
+      console.error("Failed to check availability:", err);
+      setIsAvailable(false);
+    }
+  };
 
   const generateText = async () => {
     if (!prompt.trim()) {
@@ -21,21 +39,33 @@ export default function BasicGenerationScreen() {
       return;
     }
 
+    if (!isAvailable) {
+      setError("Foundation Models is not available on this device");
+      return;
+    }
+
+    if (!ExpoFoundationModelsModule.generateText) {
+      setError("Text generation not supported on this platform");
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      setResponse("");
+      setResponse(null);
 
-      // TODO: Implement actual text generation in Phase 2
-      // For now, simulate the functionality
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setResponse(
-        "Text generation not yet implemented. This is Phase 1 - only availability checking is functional. Phase 2 will implement actual text generation using Foundation Models."
-      );
+      const result = await ExpoFoundationModelsModule.generateText({
+        prompt: prompt.trim(),
+      });
+
+      // Check if there's an error in the response
+      if ("error" in result && result.error) {
+        setError(result.error as string);
+      } else {
+        setResponse(result);
+      }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to generate text"
-      );
+      setError(err instanceof Error ? err.message : "Failed to generate text");
     } finally {
       setLoading(false);
     }
@@ -43,15 +73,18 @@ export default function BasicGenerationScreen() {
 
   const clearAll = () => {
     setPrompt("");
-    setResponse("");
+    setResponse(null);
     setError(null);
   };
 
   return (
-    <ScrollView style={styles.container} contentInsetAdjustmentBehavior="automatic">
+    <ScrollView
+      style={styles.container}
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <View style={styles.content}>
         <Text style={styles.title}>Basic Text Generation</Text>
-        
+
         <Text style={styles.subtitle}>
           Enter a prompt to generate text using Foundation Models
         </Text>
@@ -100,18 +133,42 @@ export default function BasicGenerationScreen() {
         {response && !loading && (
           <View style={styles.responseCard}>
             <Text style={styles.responseLabel}>Response:</Text>
-            <Text style={styles.responseText}>{response}</Text>
+            <Text style={styles.responseText}>{response.content}</Text>
+
+            <View style={styles.metadataContainer}>
+              <Text style={styles.metadataTitle}>Generation Details:</Text>
+              <Text style={styles.metadataText}>
+                • Tokens: {response.metadata.tokenCount}
+              </Text>
+              <Text style={styles.metadataText}>
+                • Time: {response.metadata.generationTime.toFixed(2)}s
+              </Text>
+              <Text style={styles.metadataText}>
+                • Model: {response.metadata.model}
+              </Text>
+            </View>
           </View>
         )}
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Phase 1 Note</Text>
-          <Text style={styles.infoText}>
-            This screen is prepared for Phase 2 implementation. Currently only
-            shows placeholder functionality. Actual Foundation Models text
-            generation will be implemented in the next phase.
-          </Text>
-        </View>
+        {isAvailable === false && (
+          <View style={styles.infoCard}>
+            <Text style={styles.infoTitle}>Not Available</Text>
+            <Text style={styles.infoText}>
+              Foundation Models is not available on this device. iOS 26+ with
+              Apple Intelligence is required for text generation.
+            </Text>
+          </View>
+        )}
+
+        {isAvailable === true && (
+          <View style={styles.infoCard}>
+            <Text style={styles.infoTitle}>Ready to Generate</Text>
+            <Text style={styles.infoText}>
+              Foundation Models is available! Enter a prompt above to generate
+              text using Apple&apos;s on-device language model.
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -231,5 +288,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#1e40af",
     lineHeight: 20,
+  },
+  metadataContainer: {
+    marginTop: 15,
+    padding: 12,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+  },
+  metadataTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
+  },
+  metadataText: {
+    fontSize: 12,
+    color: "#666",
+    lineHeight: 16,
   },
 });

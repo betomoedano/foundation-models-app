@@ -6,3 +6,17 @@ export interface FoundationModelsAvailability {
   osVersion: string;
   frameworkVersion?: string;
 }
+
+// Text Generation Types
+export interface GenerationRequest {
+  prompt: string;
+}
+
+export interface GenerationResponse {
+  content: string;
+  metadata: {
+    tokenCount: number;
+    generationTime: number;
+    model: string;
+  };
+}
