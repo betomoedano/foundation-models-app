@@ -1,50 +1,50 @@
-# Welcome to your Expo app 👋
+# Expo Foundation Models
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An experimental React Native project with a local native module that provides access to Apple's Foundation Models API (iOS 26+) through Expo Modules API.
 
-## Get started
+## Overview
 
-1. Install dependencies
+This project exposes Apple's native AI/ML capabilities to React Native applications, focusing on on-device processing with privacy-first design. The native module is developed locally within this project.
+
+## Requirements
+
+- **iOS:** iOS 26+ (required for Foundation Models)
+- **Android/Web:** Returns "not implemented" (stub implementations)
+- **Expo SDK:** ~53.0.13
+- **React Native:** 0.79.4
+
+## Getting Started
+
+1. Install dependencies:
 
    ```bash
-   npm install
+   bun install
    ```
 
-2. Start the app
+2. Start development:
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. Run on specific platform:
+   ```bash
+   npx expo run:ios     # iOS simulator
+   npx expo run:android # Android emulator
+   npx expo start --web # Web browser
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Features
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Native module with Expo Modules API
+- iOS availability checking for Foundation Models
+- Cross-platform TypeScript interfaces
+- Basic text generation
+- Structured data generation
+- Streaming responses
 
-## Get a fresh project
+## Development
 
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Linting:** `npm run lint`
+- **Documentation:** See `CLAUDE.md` for AI assistant guidance
+- **Implementation Plan:** See `plans/` directory for detailed roadmap
