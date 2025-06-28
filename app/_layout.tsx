@@ -35,6 +35,13 @@ export default function RootLayout() {
           presentation: "card",
         }}
       />
+      <Stack.Screen
+        name="streaming-chat"
+        options={{
+          title: "Streaming Chat",
+          presentation: "card",
+        }}
+      />
     </Stack>
   );
 }

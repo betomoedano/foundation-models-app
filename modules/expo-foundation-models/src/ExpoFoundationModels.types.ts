@@ -37,3 +37,22 @@ export interface StructuredGenerationResponse {
   };
   error?: string;
 }
+
+// Streaming Types
+export interface StreamingRequest {
+  prompt: string;
+  sessionId?: string;
+}
+
+export interface StreamingChunk {
+  content: string;
+  isComplete: boolean;
+  tokenCount: number;
+  sessionId: string;
+}
+
+export interface StreamingSession {
+  sessionId: string;
+  isActive: boolean;
+  totalTokens: number;
+}

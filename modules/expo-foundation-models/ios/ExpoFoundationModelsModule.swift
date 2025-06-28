@@ -87,6 +87,11 @@ struct Event {
 #endif
 
 public class ExpoFoundationModelsModule: Module {
+  // Store active streaming sessions (using Any to avoid availability issues)
+  private var streamingSessions: [String: Any] = [:]
+  // Store active streaming tasks for cancellation
+  private var streamingTasks: [String: Task<Void, Never>] = [:]
+  
   public func definition() -> ModuleDefinition {
     Name("ExpoFoundationModels")
 
@@ -102,6 +107,17 @@ public class ExpoFoundationModelsModule: Module {
     AsyncFunction("generateStructuredData") { (request: [String: Any]) -> [String: Any] in
       return await self.generateStructuredData(request: request)
     }
+    
+    AsyncFunction("startStreamingSession") { (request: [String: Any]) -> [String: Any] in
+      return await self.startStreamingSession(request: request)
+    }
+    
+    AsyncFunction("cancelStreamingSession") { (sessionId: String) -> Void in
+      await self.cancelStreamingSession(sessionId: sessionId)
+    }
+    
+    // Event definitions
+    Events("onStreamingChunk", "onStreamingError", "onStreamingCancelled")
   }
   
   // MARK: - Foundation Models Availability Check
@@ -406,6 +422,137 @@ public class ExpoFoundationModelsModule: Module {
       return jsonString.count / 4 // Rough estimation: 1 token ≈ 4 characters
     } catch {
       return 0
+    }
+  }
+  
+  // MARK: - Streaming Implementation
+  
+  private func startStreamingSession(request: [String: Any]) async -> [String: Any] {
+    guard let prompt = request["prompt"] as? String, !prompt.isEmpty else {
+      return [
+        "sessionId": "",
+        "isActive": false,
+        "totalTokens": 0,
+        "error": "Prompt is required and cannot be empty"
+      ]
+    }
+    
+    #if canImport(FoundationModels)
+    if #available(iOS 26.0, macOS 26.0, *) {
+      do {
+        // Generate a unique session ID
+        let sessionId = UUID().uuidString
+        
+        // Create a new language model session
+        let session = LanguageModelSession()
+        
+        // Store the session
+        streamingSessions[sessionId] = session
+        
+        // Create and store the streaming task
+        let streamingTask = Task {
+          do {
+            let promptObj = Prompt(prompt)
+            let stream = session.streamResponse(to: promptObj)
+            
+            for try await currentContent in stream {
+              // Check if task is cancelled
+              if Task.isCancelled {
+                throw CancellationError()
+              }
+              
+              // The stream returns the full accumulated content each time
+              // We'll send the full content and let JS handle it
+              
+              // Estimate total tokens for the full content
+              let currentTokens = currentContent.count / 4
+              
+              // Send the full content as a chunk event
+              self.sendEvent("onStreamingChunk", [
+                "sessionId": sessionId,
+                "content": currentContent,
+                "isComplete": false,
+                "tokenCount": currentTokens
+              ])
+            }
+            
+            // Send completion event
+            self.sendEvent("onStreamingChunk", [
+              "sessionId": sessionId,
+              "content": "",
+              "isComplete": true,
+              "tokenCount": 0
+            ])
+            
+            // Clean up
+            self.streamingSessions.removeValue(forKey: sessionId)
+            self.streamingTasks.removeValue(forKey: sessionId)
+            
+          } catch is CancellationError {
+            // Task was cancelled, no need to send error
+            self.streamingSessions.removeValue(forKey: sessionId)
+            self.streamingTasks.removeValue(forKey: sessionId)
+          } catch {
+            // Send error event
+            self.sendEvent("onStreamingError", [
+              "sessionId": sessionId,
+              "error": error.localizedDescription
+            ])
+            
+            // Clean up
+            self.streamingSessions.removeValue(forKey: sessionId)
+            self.streamingTasks.removeValue(forKey: sessionId)
+          }
+        }
+        
+        // Store the task for cancellation
+        streamingTasks[sessionId] = streamingTask
+        
+        return [
+          "sessionId": sessionId,
+          "isActive": true,
+          "totalTokens": 0
+        ]
+        
+      } catch {
+        return [
+          "sessionId": "",
+          "isActive": false,
+          "totalTokens": 0,
+          "error": "Failed to start streaming session: \(error.localizedDescription)"
+        ]
+      }
+    } else {
+      return [
+        "sessionId": "",
+        "isActive": false,
+        "totalTokens": 0,
+        "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
+      ]
+    }
+    #else
+    return [
+      "sessionId": "",
+      "isActive": false,
+      "totalTokens": 0,
+      "error": "Foundation Models framework not available in this build"
+    ]
+    #endif
+  }
+  
+  private func cancelStreamingSession(sessionId: String) async {
+    // Cancel the streaming task if it exists
+    if let task = streamingTasks[sessionId] {
+      task.cancel()
+      streamingTasks.removeValue(forKey: sessionId)
+    }
+    
+    // Remove the session
+    if streamingSessions.removeValue(forKey: sessionId) != nil {
+      // Send cancellation event
+      self.sendEvent("onStreamingCancelled", [
+        "sessionId": sessionId
+      ])
     }
   }
 }

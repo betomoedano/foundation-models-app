@@ -21,6 +21,12 @@ const screens = [
     description: "Generate structured JSON data with schemas",
     href: "/structured-data",
   },
+  {
+    id: "streaming-chat",
+    title: "Streaming Chat",
+    description: "Real-time text generation with streaming",
+    href: "/streaming-chat",
+  },
 ];
 
 export default function Index() {
