@@ -116,8 +116,12 @@ public class ExpoFoundationModelsModule: Module {
       await self.cancelStreamingSession(sessionId: sessionId)
     }
     
+    AsyncFunction("startStructuredStreamingSession") { (request: [String: Any]) -> [String: Any] in
+      return await self.startStructuredStreamingSession(request: request)
+    }
+    
     // Event definitions
-    Events("onStreamingChunk", "onStreamingError", "onStreamingCancelled")
+    Events("onStreamingChunk", "onStreamingError", "onStreamingCancelled", "onStructuredStreamingChunk")
   }
   
   // MARK: - Foundation Models Availability Check
@@ -554,5 +558,161 @@ public class ExpoFoundationModelsModule: Module {
         "sessionId": sessionId
       ])
     }
+  }
+  
+  // MARK: - Structured Streaming Implementation
+  
+  private func startStructuredStreamingSession(request: [String: Any]) async -> [String: Any] {
+    guard let prompt = request["prompt"] as? String, !prompt.isEmpty else {
+      return [
+        "sessionId": "",
+        "isActive": false,
+        "totalTokens": 0,
+        "error": "Prompt is required and cannot be empty"
+      ]
+    }
+    
+    #if canImport(FoundationModels)
+    if #available(iOS 26.0, macOS 26.0, *) {
+      do {
+        // Generate a unique session ID
+        let sessionId = UUID().uuidString
+        
+        // Create a new language model session
+        let session = LanguageModelSession()
+        
+        // Store the session
+        streamingSessions[sessionId] = session
+        
+        // Create and store the streaming task
+        let streamingTask = Task {
+          do {
+            let promptObj = Prompt(prompt)
+            
+            // Stream Product generation (keeping it simple)
+            let stream = session.streamResponse(
+              generating: Product.self,
+              options: GenerationOptions(sampling: .greedy),
+              includeSchemaInPrompt: false
+            ) {
+              "Generate a product"
+              
+              "Give it a real name, price, category, description, features, and inStock"
+            }
+            
+            for try await partialProduct in stream {
+              // Check if task is cancelled
+              if Task.isCancelled {
+                throw CancellationError()
+              }
+              
+              // partialProduct is Product.PartiallyGenerated
+              // We'll send whatever we have
+              var productData: [String: Any] = [:]
+              var hasCompleteData = false
+              
+              // Try to extract available fields
+              // Note: PartiallyGenerated allows us to check which fields are available
+              if let name = partialProduct.name {
+                productData["name"] = name
+              }
+              
+              if let price = partialProduct.price {
+                productData["price"] = price
+              }
+              
+              if let category = partialProduct.category {
+                productData["category"] = category
+              }
+              
+              if let description = partialProduct.description {
+                productData["description"] = description
+              }
+              
+              if let features = partialProduct.features {
+                productData["features"] = features
+              }
+              
+              if let inStock = partialProduct.inStock {
+                productData["inStock"] = inStock
+              }
+              
+              // Check if we have all fields (complete product)
+              hasCompleteData = productData.count == 6
+              
+              // Send structured chunk event
+              self.sendEvent("onStructuredStreamingChunk", [
+                "sessionId": sessionId,
+                "data": productData,
+                "schemaType": "product",
+                "isComplete": false,
+                "isPartial": !hasCompleteData
+              ])
+            }
+            
+            // Send completion event
+            self.sendEvent("onStructuredStreamingChunk", [
+              "sessionId": sessionId,
+              "data": [:],
+              "schemaType": "product",
+              "isComplete": true,
+              "isPartial": false
+            ])
+            
+            // Clean up
+            self.streamingSessions.removeValue(forKey: sessionId)
+            self.streamingTasks.removeValue(forKey: sessionId)
+            
+          } catch is CancellationError {
+            // Task was cancelled, no need to send error
+            self.streamingSessions.removeValue(forKey: sessionId)
+            self.streamingTasks.removeValue(forKey: sessionId)
+          } catch {
+            // Send error event
+            self.sendEvent("onStreamingError", [
+              "sessionId": sessionId,
+              "error": error.localizedDescription
+            ])
+            
+            // Clean up
+            self.streamingSessions.removeValue(forKey: sessionId)
+            self.streamingTasks.removeValue(forKey: sessionId)
+          }
+        }
+        
+        // Store the task for cancellation
+        streamingTasks[sessionId] = streamingTask
+        
+        return [
+          "sessionId": sessionId,
+          "isActive": true,
+          "totalTokens": 0,
+          "schemaType": "product"
+        ]
+        
+      } catch {
+        return [
+          "sessionId": "",
+          "isActive": false,
+          "totalTokens": 0,
+          "error": "Failed to start structured streaming session: \(error.localizedDescription)"
+        ]
+      }
+    } else {
+      return [
+        "sessionId": "",
+        "isActive": false,
+        "totalTokens": 0,
+        "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
+      ]
+    }
+    #else
+    return [
+      "sessionId": "",
+      "isActive": false,
+      "totalTokens": 0,
+      "error": "Foundation Models framework not available in this build"
+    ]
+    #endif
   }
 }

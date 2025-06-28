@@ -55,4 +55,13 @@ export interface StreamingSession {
   sessionId: string;
   isActive: boolean;
   totalTokens: number;
+  schemaType?: string;
+}
+
+export interface StructuredStreamingChunk {
+  sessionId: string;
+  data: any;
+  schemaType: string;
+  isComplete: boolean;
+  isPartial: boolean;
 }

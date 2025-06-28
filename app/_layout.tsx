@@ -42,6 +42,13 @@ export default function RootLayout() {
           presentation: "card",
         }}
       />
+      <Stack.Screen
+        name="streaming-structured"
+        options={{
+          title: "Streaming Structured",
+          presentation: "card",
+        }}
+      />
     </Stack>
   );
 }

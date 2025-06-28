@@ -27,6 +27,12 @@ const screens = [
     description: "Real-time text generation with streaming",
     href: "/streaming-chat",
   },
+  {
+    id: "streaming-structured",
+    title: "Streaming Structured",
+    description: "Real-time structured data generation",
+    href: "/streaming-structured",
+  },
 ];
 
 export default function Index() {
