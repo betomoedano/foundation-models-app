@@ -1,16 +1,17 @@
+import { Text } from "@/components/ThemedText";
+import { useThemedColors } from "@/components/useThemedColors";
 import ExpoFoundationModelsModule, {
   StreamingChunk,
   StreamingSession,
 } from "@/modules/expo-foundation-models";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Button,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
@@ -21,15 +22,11 @@ export default function StreamingChatScreen() {
   const [session, setSession] = useState<StreamingSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [totalTokens, setTotalTokens] = useState(0);
-
-  const scrollViewRef = useRef<ScrollView>(null);
   const subscriptionsRef = useRef<any[]>([]);
+  const colors = useThemedColors();
 
   useEffect(() => {
-    checkAvailability();
-
     // Set up event listeners
     const chunkSub = ExpoFoundationModelsModule.addListener(
       "onStreamingChunk",
@@ -38,7 +35,6 @@ export default function StreamingChatScreen() {
           setSession(null);
           setLoading(false);
         } else {
-          // Always replace with the latest content (cumulative)
           setStreamingContent(chunk.content);
           setTotalTokens(chunk.tokenCount);
         }
@@ -65,36 +61,12 @@ export default function StreamingChatScreen() {
     subscriptionsRef.current = [chunkSub, errorSub, cancelSub];
 
     return () => {
-      // Clean up subscriptions
       subscriptionsRef.current.forEach((sub) => sub.remove());
     };
   }, []);
 
-  const checkAvailability = async () => {
-    try {
-      const availability = await ExpoFoundationModelsModule.checkAvailability();
-      setIsAvailable(availability.isAvailable);
-    } catch (err) {
-      console.error("Failed to check availability:", err);
-      setIsAvailable(false);
-    }
-  };
-
   const startStreaming = async () => {
-    if (!prompt.trim()) {
-      setError("Please enter a prompt");
-      return;
-    }
-
-    if (!isAvailable) {
-      setError("Foundation Models is not available on this device");
-      return;
-    }
-
-    if (!ExpoFoundationModelsModule.startStreamingSession) {
-      setError("Streaming not supported on this platform");
-      return;
-    }
+    if (!prompt.trim()) return;
 
     try {
       setLoading(true);
@@ -142,127 +114,140 @@ export default function StreamingChatScreen() {
     setSession(null);
   };
 
-  const exportChat = () => {
-    const chatData = {
-      prompt,
-      response: streamingContent,
-      totalTokens,
-      timestamp: new Date().toISOString(),
-    };
-    console.log("Chat export:", JSON.stringify(chatData, null, 2));
-    // In a real app, you'd implement proper export functionality
-  };
-
-  useEffect(() => {
-    // Auto-scroll to bottom when content updates
-    if (scrollViewRef.current && streamingContent) {
-      scrollViewRef.current.scrollToEnd({ animated: true });
-    }
-  }, [streamingContent]);
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        ref={scrollViewRef}
         style={styles.scrollView}
         contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Streaming Chat</Text>
-          <Text style={styles.subtitle}>
-            Real-time text generation with streaming
-          </Text>
+          {error && (
+            <View style={styles.section}>
+              <Text size="caption" style={styles.errorLabel}>
+                ERROR
+              </Text>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
-          {/* Response Display */}
           {(streamingContent || loading) && (
-            <View style={styles.responseCard}>
-              <Text style={styles.responseLabel}>Response:</Text>
+            <View style={styles.section}>
+              <Text size="caption" style={styles.label}>
+                RESPONSE
+              </Text>
               <Text style={styles.responseText}>
                 {streamingContent}
-                {loading && <Text style={styles.cursor}>▊</Text>}
+                {loading && (
+                  <Text style={[styles.cursor, { color: colors.text }]}>▊</Text>
+                )}
               </Text>
               {totalTokens > 0 && (
-                <Text style={styles.tokenCount}>Tokens: {totalTokens}</Text>
+                <View
+                  style={[styles.metadata, { borderTopColor: colors.border }]}
+                >
+                  <Text size="caption" style={styles.metadataText}>
+                    {totalTokens} tokens
+                  </Text>
+                </View>
               )}
-            </View>
-          )}
-
-          {/* Error Display */}
-          {error && (
-            <View style={styles.errorCard}>
-              <Text style={styles.errorText}>Error: {error}</Text>
-            </View>
-          )}
-
-          {/* Status Info */}
-          {isAvailable === false && (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Not Available</Text>
-              <Text style={styles.infoText}>
-                Foundation Models is not available on this device. iOS 26+ with
-                Apple Intelligence is required for streaming.
-              </Text>
             </View>
           )}
         </View>
       </ScrollView>
 
-      {/* Input Area */}
-      <View style={styles.inputArea}>
-        <View style={styles.inputCard}>
+      {/* Fixed Input Area */}
+      <View
+        style={[
+          styles.inputArea,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <View style={styles.inputSection}>
+          <Text size="caption" style={styles.label}>
+            PROMPT
+          </Text>
           <TextInput
-            style={styles.textInput}
+            style={[
+              styles.textInput,
+              {
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
             value={prompt}
             onChangeText={setPrompt}
             placeholder="Enter your prompt..."
+            placeholderTextColor={colors.placeholder}
             multiline
-            numberOfLines={3}
+            numberOfLines={2}
             textAlignVertical="top"
             editable={!loading}
           />
+        </View>
 
-          <View style={styles.buttonRow}>
-            {!loading ? (
-              <>
-                <View style={styles.buttonContainer}>
-                  <Button
-                    title="Stream"
-                    onPress={startStreaming}
-                    disabled={!prompt.trim()}
-                  />
-                </View>
-                <View style={styles.buttonContainer}>
-                  <Button title="Clear" onPress={clearChat} color="#666" />
-                </View>
-                {streamingContent && (
-                  <View style={styles.buttonContainer}>
-                    <Button
-                      title="Export"
-                      onPress={exportChat}
-                      color="#8b5cf6"
-                    />
-                  </View>
-                )}
-              </>
-            ) : (
-              <>
-                <View style={styles.buttonContainer}>
-                  <Button
-                    title="Cancel"
-                    onPress={cancelStreaming}
-                    color="#dc3545"
-                  />
-                </View>
-                <View style={styles.streamingIndicator}>
-                  <ActivityIndicator size="small" color="#007AFF" />
-                  <Text style={styles.streamingText}>Streaming...</Text>
-                </View>
-              </>
-            )}
-          </View>
+        <View style={styles.actions}>
+          {!loading ? (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  {
+                    backgroundColor: colors.button,
+                    borderColor: colors.button,
+                  },
+                  pressed && styles.buttonPressed,
+                  !prompt.trim() && styles.buttonDisabled,
+                ]}
+                onPress={startStreaming}
+                disabled={!prompt.trim()}
+              >
+                <Text style={[styles.buttonText, { color: colors.buttonText }]}>
+                  Stream
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  { borderColor: colors.border },
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={clearChat}
+              >
+                <Text style={styles.buttonText}>Clear</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  {
+                    backgroundColor: "red",
+                    borderColor: "red",
+                  },
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={cancelStreaming}
+              >
+                <Text style={[styles.buttonText, { color: "white" }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+
+              <View style={styles.streamingIndicator}>
+                <ActivityIndicator size="small" color={colors.text} />
+                <Text style={styles.streamingText}>Streaming...</Text>
+              </View>
+            </>
+          )}
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -272,122 +257,92 @@ export default function StreamingChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
-    paddingBottom: 120,
+    paddingHorizontal: 20,
+    paddingBottom: 200, // Space for input area
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 8,
+  section: {
+    marginBottom: 32,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 30,
-  },
-  responseCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  responseLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+  label: {
+    opacity: 0.6,
     marginBottom: 12,
+  },
+  errorLabel: {
+    opacity: 0.6,
+    marginBottom: 12,
+    color: "red",
   },
   responseText: {
     fontSize: 16,
-    color: "#333",
     lineHeight: 24,
   },
   cursor: {
-    color: "#007AFF",
     fontWeight: "bold",
   },
-  tokenCount: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 8,
+  metadata: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  errorCard: {
-    backgroundColor: "#fef2f2",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  metadataText: {
+    opacity: 0.5,
   },
   errorText: {
-    color: "#dc3545",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  infoCard: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 12,
-    padding: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1e40af",
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#1e40af",
-    lineHeight: 20,
+    color: "red",
   },
   inputArea: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#f5f5f5",
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    padding: 20,
   },
-  inputCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    marginTop: 0,
-    boxShadow: "0 -2px 4px rgba(0, 0, 0, 0.1)",
+  inputSection: {
+    marginBottom: 16,
   },
   textInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
     fontSize: 16,
+    lineHeight: 24,
     minHeight: 60,
     maxHeight: 100,
-    marginBottom: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 8,
   },
-  buttonRow: {
+  actions: {
     flexDirection: "row",
     gap: 12,
     alignItems: "center",
   },
-  buttonContainer: {
+  button: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  buttonDisabled: {
+    opacity: 0.3,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
   },
   streamingIndicator: {
-    flex: 2,
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -395,6 +350,6 @@ const styles = StyleSheet.create({
   },
   streamingText: {
     fontSize: 14,
-    color: "#007AFF",
+    opacity: 0.6,
   },
 });

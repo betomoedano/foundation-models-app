@@ -1,35 +1,34 @@
+import { Text } from "@/components/ThemedText";
+import { useThemedColors } from "@/components/useThemedColors";
 import ExpoFoundationModelsModule, {
-  StructuredStreamingChunk,
   StreamingSession,
+  StructuredStreamingChunk,
 } from "@/modules/expo-foundation-models";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Button,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
 
 export default function StreamingStructuredScreen() {
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(
+    "Create a product for high-end wireless noise-cancelling headphones"
+  );
   const [streamingData, setStreamingData] = useState<any>(null);
   const [session, setSession] = useState<StreamingSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isPartial, setIsPartial] = useState(false);
-
-  const scrollViewRef = useRef<ScrollView>(null);
   const subscriptionsRef = useRef<any[]>([]);
+  const colors = useThemedColors();
 
   useEffect(() => {
-    checkAvailability();
-
     // Set up event listeners
     const chunkSub = ExpoFoundationModelsModule.addListener(
       "onStructuredStreamingChunk",
@@ -67,44 +66,12 @@ export default function StreamingStructuredScreen() {
     subscriptionsRef.current = [chunkSub, errorSub, cancelSub];
 
     return () => {
-      // Clean up subscriptions
       subscriptionsRef.current.forEach((sub) => sub.remove());
     };
   }, []);
 
-  // Auto-start generation when availability is confirmed
-  useEffect(() => {
-    if (isAvailable === true && !loading && !streamingData) {
-      const timer = setTimeout(() => {
-        startStreaming();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isAvailable]);
-
-  const checkAvailability = async () => {
-    try {
-      const availability = await ExpoFoundationModelsModule.checkAvailability();
-      setIsAvailable(availability.isAvailable);
-    } catch (err) {
-      console.error("Failed to check availability:", err);
-      setIsAvailable(false);
-    }
-  };
-
   const startStreaming = async () => {
-    // Use a default prompt if none provided
-    const promptToUse = prompt.trim() || "Create a product for a high-end wireless noise-cancelling headphone";
-
-    if (!isAvailable) {
-      setError("Foundation Models is not available on this device");
-      return;
-    }
-
-    if (!ExpoFoundationModelsModule.startStructuredStreamingSession) {
-      setError("Structured streaming not supported on this platform");
-      return;
-    }
+    if (!prompt.trim()) return;
 
     try {
       setLoading(true);
@@ -112,9 +79,10 @@ export default function StreamingStructuredScreen() {
       setStreamingData(null);
       setIsPartial(false);
 
-      const newSession = await ExpoFoundationModelsModule.startStructuredStreamingSession({
-        prompt: promptToUse,
-      });
+      const newSession =
+        await ExpoFoundationModelsModule.startStructuredStreamingSession({
+          prompt: prompt.trim(),
+        });
 
       if ("error" in newSession && newSession.error) {
         setError(newSession.error as string);
@@ -142,88 +110,25 @@ export default function StreamingStructuredScreen() {
     }
   };
 
+  const clearChat = () => {
+    setPrompt(
+      "Create a product for high-end wireless noise-cancelling headphones"
+    );
+    setStreamingData(null);
+    setError(null);
+    setSession(null);
+    setIsPartial(false);
+  };
 
   const formatProductData = (data: any) => {
     if (!data) return null;
 
-    // Show whatever fields we have
     return (
-      <View style={styles.productContainer}>
-        {data.name ? (
-          <Text style={styles.productName}>{data.name}</Text>
-        ) : (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonLine, { width: "60%" }]} />
-          </View>
-        )}
-        
-        {data.price !== undefined ? (
-          <Text style={styles.productPrice}>${data.price}</Text>
-        ) : (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonLine, { width: "30%" }]} />
-          </View>
-        )}
-        
-        {data.category ? (
-          <Text style={styles.productCategory}>{data.category}</Text>
-        ) : (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonLine, { width: "40%" }]} />
-          </View>
-        )}
-        
-        {data.description ? (
-          <Text style={styles.productDescription}>{data.description}</Text>
-        ) : (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonLine, { width: "100%" }]} />
-            <View style={[styles.skeletonLine, { width: "90%" }]} />
-            <View style={[styles.skeletonLine, { width: "95%" }]} />
-          </View>
-        )}
-        
-        {data.features && data.features.length > 0 ? (
-          <View style={styles.featuresContainer}>
-            <Text style={styles.featuresTitle}>Features:</Text>
-            {data.features.map((feature: string, index: number) => (
-              <Text key={index} style={styles.featureItem}>
-                • {feature}
-              </Text>
-            ))}
-          </View>
-        ) : !data.features && (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonLine, { width: "50%", marginTop: 16 }]} />
-            <View style={[styles.skeletonLine, { width: "70%", marginLeft: 16 }]} />
-            <View style={[styles.skeletonLine, { width: "65%", marginLeft: 16 }]} />
-          </View>
-        )}
-        
-        {data.inStock !== undefined ? (
-          <View style={styles.stockContainer}>
-            <Text style={[
-              styles.stockText,
-              { color: data.inStock ? "#28a745" : "#dc3545" }
-            ]}>
-              {data.inStock ? "✓ In Stock" : "✗ Out of Stock"}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.skeleton}>
-            <View style={[styles.skeletonLine, { width: "25%", marginTop: 16 }]} />
-          </View>
-        )}
+      <View style={styles.dataContainer}>
+        <Text style={styles.dataText}>{JSON.stringify(data, null, 2)}</Text>
       </View>
     );
   };
-
-  useEffect(() => {
-    // Auto-scroll when data updates
-    if (scrollViewRef.current && streamingData) {
-      scrollViewRef.current.scrollToEnd({ animated: true });
-    }
-  }, [streamingData]);
 
   return (
     <KeyboardAvoidingView
@@ -231,71 +136,129 @@ export default function StreamingStructuredScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        ref={scrollViewRef}
         style={styles.scrollView}
         contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Streaming Structured Data</Text>
-          <Text style={styles.subtitle}>
-            Real-time product generation with structured output
-          </Text>
-
-          {/* Response Display */}
-          {(streamingData || loading) && (
-            <View style={styles.responseCard}>
-              <Text style={styles.responseLabel}>
-                Generated Product {isPartial && "(Partial)"}:
+          {error && (
+            <View style={styles.section}>
+              <Text size="caption" style={styles.errorLabel}>
+                ERROR
               </Text>
-              {formatProductData(streamingData)}
-              {loading && !streamingData && (
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {(streamingData || loading) && (
+            <View style={styles.section}>
+              <Text size="caption" style={styles.label}>
+                STRUCTURED DATA {isPartial && "(PARTIAL)"}
+              </Text>
+              {streamingData ? (
+                formatProductData(streamingData)
+              ) : (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#007AFF" />
+                  <ActivityIndicator size="small" color={colors.text} />
                   <Text style={styles.loadingText}>Starting generation...</Text>
                 </View>
               )}
             </View>
           )}
-
-          {/* Error Display */}
-          {error && (
-            <View style={styles.errorCard}>
-              <Text style={styles.errorText}>Error: {error}</Text>
-            </View>
-          )}
-
-          {/* Status Info */}
-          {isAvailable === false && (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Not Available</Text>
-              <Text style={styles.infoText}>
-                Foundation Models is not available on this device. iOS 26+ with
-                Apple Intelligence is required.
-              </Text>
-            </View>
-          )}
-
-          {/* Simple Controls */}
-          {isAvailable && (
-            <View style={styles.controlsCard}>
-              <View style={styles.buttonRow}>
-                {!loading ? (
-                  <Button
-                    title="Generate New Product"
-                    onPress={startStreaming}
-                  />
-                ) : (
-                  <Button
-                    title="Cancel"
-                    onPress={cancelStreaming}
-                    color="#dc3545"
-                  />
-                )}
-              </View>
-            </View>
-          )}
         </View>
       </ScrollView>
+
+      {/* Fixed Input Area */}
+      <View
+        style={[
+          styles.inputArea,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <View style={styles.inputSection}>
+          <Text size="caption" style={styles.label}>
+            PROMPT
+          </Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              {
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
+            value={prompt}
+            onChangeText={setPrompt}
+            placeholder="Describe a product to generate..."
+            placeholderTextColor={colors.placeholder}
+            multiline
+            numberOfLines={2}
+            textAlignVertical="top"
+            editable={!loading}
+          />
+        </View>
+
+        <View style={styles.actions}>
+          {!loading ? (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  {
+                    backgroundColor: colors.button,
+                    borderColor: colors.button,
+                  },
+                  pressed && styles.buttonPressed,
+                  !prompt.trim() && styles.buttonDisabled,
+                ]}
+                onPress={startStreaming}
+                disabled={!prompt.trim()}
+              >
+                <Text style={[styles.buttonText, { color: colors.buttonText }]}>
+                  Generate
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  { borderColor: colors.border },
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={clearChat}
+              >
+                <Text style={styles.buttonText}>Clear</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  {
+                    backgroundColor: "red",
+                    borderColor: "red",
+                  },
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={cancelStreaming}
+              >
+                <Text style={[styles.buttonText, { color: "white" }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+
+              <View style={styles.streamingIndicator}>
+                <ActivityIndicator size="small" color={colors.text} />
+                <Text style={styles.streamingText}>Generating...</Text>
+              </View>
+            </>
+          )}
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -303,174 +266,96 @@ export default function StreamingStructuredScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
-    paddingBottom: 120,
+    paddingHorizontal: 20,
+    paddingBottom: 200, // Space for input area
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 8,
+  section: {
+    marginBottom: 32,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 30,
+  label: {
+    opacity: 0.6,
+    marginBottom: 12,
   },
-  responseCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  errorLabel: {
+    opacity: 0.6,
+    marginBottom: 12,
+    color: "red",
   },
-  responseLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 16,
+  dataContainer: {
+    backgroundColor: "rgba(128, 128, 128, 0.05)",
+    borderRadius: 8,
+    padding: 16,
   },
-  productContainer: {
-    gap: 12,
-  },
-  productName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  productPrice: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#007AFF",
-  },
-  productCategory: {
-    fontSize: 14,
-    color: "#666",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  productDescription: {
-    fontSize: 16,
-    color: "#333",
-    lineHeight: 24,
-    marginTop: 8,
-  },
-  featuresContainer: {
-    marginTop: 16,
-  },
-  featuresTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
-  },
-  featureItem: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
-    marginLeft: 8,
-  },
-  stockContainer: {
-    marginTop: 16,
-    alignItems: "flex-start",
-  },
-  stockText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  partialDataContainer: {
-    alignItems: "center",
-    paddingVertical: 40,
-    gap: 16,
-  },
-  partialLabel: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
+  dataText: {
+    fontSize: 12,
+    fontFamily: "monospace",
+    lineHeight: 18,
   },
   loadingContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 20,
+    gap: 8,
   },
   loadingText: {
-    marginTop: 10,
-    color: "#666",
-  },
-  errorCard: {
-    backgroundColor: "#fef2f2",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    fontSize: 14,
+    opacity: 0.6,
   },
   errorText: {
-    color: "#dc3545",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  infoCard: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 12,
-    padding: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1e40af",
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#1e40af",
-    lineHeight: 20,
+    color: "red",
   },
   inputArea: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#f5f5f5",
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    padding: 20,
   },
-  inputCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    marginTop: 0,
-    boxShadow: "0 -2px 4px rgba(0, 0, 0, 0.1)",
+  inputSection: {
+    marginBottom: 16,
   },
   textInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
     fontSize: 16,
+    lineHeight: 24,
     minHeight: 60,
     maxHeight: 100,
-    marginBottom: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 8,
   },
-  buttonRow: {
+  actions: {
     flexDirection: "row",
     gap: 12,
     alignItems: "center",
   },
-  buttonContainer: {
+  button: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+  },
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  buttonDisabled: {
+    opacity: 0.3,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
   },
   streamingIndicator: {
-    flex: 2,
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -478,22 +363,6 @@ const styles = StyleSheet.create({
   },
   streamingText: {
     fontSize: 14,
-    color: "#007AFF",
-  },
-  skeleton: {
-    marginVertical: 4,
-  },
-  skeletonLine: {
-    height: 20,
-    backgroundColor: "#e0e0e0",
-    borderRadius: 4,
-    marginVertical: 4,
-  },
-  controlsCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginTop: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    opacity: 0.6,
   },
 });

@@ -21,9 +21,9 @@ declare class ExpoFoundationModelsModule extends NativeModule {
   ): Promise<StructuredGenerationResponse>;
 
   // Streaming Methods
-  startStreamingSession?(request: StreamingRequest): Promise<StreamingSession>;
-  cancelStreamingSession?(sessionId: string): Promise<void>;
-  startStructuredStreamingSession?(
+  startStreamingSession(request: StreamingRequest): Promise<StreamingSession>;
+  cancelStreamingSession(sessionId: string): Promise<void>;
+  startStructuredStreamingSession(
     request: StreamingRequest
   ): Promise<StreamingSession>;
 
