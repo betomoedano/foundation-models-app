@@ -21,18 +21,10 @@ export default function RootLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: () => ({ sfSymbol: "house" }),
-        }}
-      />
-      <Tabs.Screen
-        name="basic-generation"
-        options={{
-          title: "Basic",
+          title: "Examples",
           tabBarIcon: () => ({ sfSymbol: "sparkles" }),
         }}
       />
-
       <Tabs.Screen
         name="settings"
         options={{
