@@ -1,54 +1,20 @@
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { View } from "react-native";
+import { useColorScheme } from "react-native";
 
 export default function RootLayout() {
+  const theme = useColorScheme() === "dark" ? DarkTheme : DefaultTheme;
+
   return (
-    <Stack
-      screenOptions={{
-        headerBackground: () => <View style={{ backgroundColor: "red" }} />,
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: "Foundation Models Demo",
-        }}
-      />
-      <Stack.Screen
-        name="availability"
-        options={{
-          title: "Availability Check",
-          presentation: "card",
-        }}
-      />
-      <Stack.Screen
-        name="basic-generation"
-        options={{
-          title: "Basic Generation",
-          presentation: "card",
-        }}
-      />
-      <Stack.Screen
-        name="structured-data"
-        options={{
-          title: "Structured Data",
-          presentation: "card",
-        }}
-      />
-      <Stack.Screen
-        name="streaming-chat"
-        options={{
-          title: "Streaming Chat",
-          presentation: "card",
-        }}
-      />
-      <Stack.Screen
-        name="streaming-structured"
-        options={{
-          title: "Streaming Structured",
-          presentation: "card",
-        }}
-      />
-    </Stack>
+    <ThemeProvider value={theme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: true }} />
+      </Stack>
+    </ThemeProvider>
   );
 }

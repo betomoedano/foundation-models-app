@@ -1,6 +1,6 @@
 import ExpoFoundationModelsModule from "@/modules/expo-foundation-models";
 import { FoundationModelsAvailability } from "@/modules/expo-foundation-models/src/ExpoFoundationModels.types";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Button,
@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-export default function AvailabilityScreen() {
+export default function Index() {
   const [availability, setAvailability] =
     useState<FoundationModelsAvailability | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,10 @@ export default function AvailabilityScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentInsetAdjustmentBehavior="automatic">
+    <ScrollView
+      style={styles.container}
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <View style={styles.content}>
         <Text style={styles.title}>Foundation Models Availability</Text>
 
