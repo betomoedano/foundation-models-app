@@ -6,86 +6,6 @@ import Foundation
 import FoundationModels
 #endif
 
-// MARK: - Generable Data Structures
-
-#if canImport(FoundationModels)
-@available(iOS 26.0, macOS 26.0, *)
-@Generable
-struct UserProfile {
-    @Guide(description: "The user's full name")
-    let name: String
-    
-    @Guide(description: "The user's age in years")
-    let age: Int
-    
-    @Guide(description: "The user's email address")
-    let email: String
-    
-    @Guide(description: "List of user's interests and hobbies")
-    let interests: [String]
-    
-    @Guide(description: "User's location information")
-    let location: Location
-}
-
-@available(iOS 26.0, macOS 26.0, *)
-@Generable
-struct Location {
-    @Guide(description: "The city name")
-    let city: String
-    
-    @Guide(description: "The country name")
-    let country: String
-}
-
-@available(iOS 26.0, macOS 26.0, *)
-@Generable
-struct Product {
-    @Guide(description: "The product name")
-    let name: String
-    
-    @Guide(description: "The price in USD")
-    let price: Double
-    
-    @Guide(description: "The product category")
-    let category: String
-    
-    @Guide(description: "Detailed product description")
-    let description: String
-    
-    @Guide(description: "List of key product features")
-    let features: [String]
-    
-    @Guide(description: "Whether the product is currently in stock")
-    let inStock: Bool
-}
-
-@available(iOS 26.0, macOS 26.0, *)
-@Generable
-struct Event {
-    @Guide(description: "The event title")
-    let title: String
-    
-    @Guide(description: "The event date in YYYY-MM-DD format")
-    let date: String
-    
-    @Guide(description: "The event time in HH:MM format")
-    let time: String
-    
-    @Guide(description: "The event location or venue")
-    let location: String
-    
-    @Guide(description: "Detailed event description")
-    let description: String
-    
-    @Guide(description: "Maximum number of attendees")
-    let capacity: Int
-    
-    @Guide(description: "Ticket price in USD")
-    let ticketPrice: Double
-}
-#endif
-
 public class ExpoFoundationModelsModule: Module {
   // Store active streaming sessions (using Any to avoid availability issues)
   private var streamingSessions: [String: Any] = [:]
@@ -97,27 +17,27 @@ public class ExpoFoundationModelsModule: Module {
 
     // Foundation Models Methods
     AsyncFunction("checkAvailability") { () -> [String: Any] in
-      return await self.getFoundationModelsAvailability()
+      return await getFoundationModelsAvailability()
     }
     
     AsyncFunction("generateText") { (request: [String: Any]) -> [String: Any] in
-      return await self.generateText(request: request)
+      return await generateText(request: request)
     }
     
     AsyncFunction("generateStructuredData") { (request: [String: Any]) -> [String: Any] in
-      return await self.generateStructuredData(request: request)
+      return await generateStructuredData(request: request)
     }
     
     AsyncFunction("startStreamingSession") { (request: [String: Any]) -> [String: Any] in
-      return await self.startStreamingSession(request: request)
+      return await startStreamingSession(request: request)
     }
     
     AsyncFunction("cancelStreamingSession") { (sessionId: String) -> Void in
-      await self.cancelStreamingSession(sessionId: sessionId)
+      await cancelStreamingSession(sessionId: sessionId)
     }
     
     AsyncFunction("startStructuredStreamingSession") { (request: [String: Any]) -> [String: Any] in
-      return await self.startStructuredStreamingSession(request: request)
+      return await startStructuredStreamingSession(request: request)
     }
     
     // Event definitions
@@ -472,7 +392,7 @@ public class ExpoFoundationModelsModule: Module {
               let currentTokens = currentContent.count / 4
               
               // Send the full content as a chunk event
-              self.sendEvent("onStreamingChunk", [
+              sendEvent("onStreamingChunk", [
                 "sessionId": sessionId,
                 "content": currentContent,
                 "isComplete": false,
@@ -481,7 +401,7 @@ public class ExpoFoundationModelsModule: Module {
             }
             
             // Send completion event
-            self.sendEvent("onStreamingChunk", [
+            sendEvent("onStreamingChunk", [
               "sessionId": sessionId,
               "content": "",
               "isComplete": true,
@@ -489,23 +409,23 @@ public class ExpoFoundationModelsModule: Module {
             ])
             
             // Clean up
-            self.streamingSessions.removeValue(forKey: sessionId)
-            self.streamingTasks.removeValue(forKey: sessionId)
+            streamingSessions.removeValue(forKey: sessionId)
+            streamingTasks.removeValue(forKey: sessionId)
             
           } catch is CancellationError {
             // Task was cancelled, no need to send error
-            self.streamingSessions.removeValue(forKey: sessionId)
-            self.streamingTasks.removeValue(forKey: sessionId)
+            streamingSessions.removeValue(forKey: sessionId)
+            streamingTasks.removeValue(forKey: sessionId)
           } catch {
             // Send error event
-            self.sendEvent("onStreamingError", [
+            sendEvent("onStreamingError", [
               "sessionId": sessionId,
               "error": error.localizedDescription
             ])
             
             // Clean up
-            self.streamingSessions.removeValue(forKey: sessionId)
-            self.streamingTasks.removeValue(forKey: sessionId)
+            streamingSessions.removeValue(forKey: sessionId)
+            streamingTasks.removeValue(forKey: sessionId)
           }
         }
         
@@ -554,7 +474,7 @@ public class ExpoFoundationModelsModule: Module {
     // Remove the session
     if streamingSessions.removeValue(forKey: sessionId) != nil {
       // Send cancellation event
-      self.sendEvent("onStreamingCancelled", [
+      sendEvent("onStreamingCancelled", [
         "sessionId": sessionId
       ])
     }
@@ -641,7 +561,7 @@ public class ExpoFoundationModelsModule: Module {
               hasCompleteData = productData.count == 6
               
               // Send structured chunk event
-              self.sendEvent("onStructuredStreamingChunk", [
+              sendEvent("onStructuredStreamingChunk", [
                 "sessionId": sessionId,
                 "data": productData,
                 "schemaType": "product",
@@ -651,7 +571,7 @@ public class ExpoFoundationModelsModule: Module {
             }
             
             // Send completion event
-            self.sendEvent("onStructuredStreamingChunk", [
+            sendEvent("onStructuredStreamingChunk", [
               "sessionId": sessionId,
               "data": [:],
               "schemaType": "product",
@@ -660,23 +580,23 @@ public class ExpoFoundationModelsModule: Module {
             ])
             
             // Clean up
-            self.streamingSessions.removeValue(forKey: sessionId)
-            self.streamingTasks.removeValue(forKey: sessionId)
+            streamingSessions.removeValue(forKey: sessionId)
+            streamingTasks.removeValue(forKey: sessionId)
             
           } catch is CancellationError {
             // Task was cancelled, no need to send error
-            self.streamingSessions.removeValue(forKey: sessionId)
-            self.streamingTasks.removeValue(forKey: sessionId)
+            streamingSessions.removeValue(forKey: sessionId)
+            streamingTasks.removeValue(forKey: sessionId)
           } catch {
             // Send error event
-            self.sendEvent("onStreamingError", [
+            sendEvent("onStreamingError", [
               "sessionId": sessionId,
               "error": error.localizedDescription
             ])
             
             // Clean up
-            self.streamingSessions.removeValue(forKey: sessionId)
-            self.streamingTasks.removeValue(forKey: sessionId)
+            streamingSessions.removeValue(forKey: sessionId)
+            streamingTasks.removeValue(forKey: sessionId)
           }
         }
         
