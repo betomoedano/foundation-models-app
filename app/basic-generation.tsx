@@ -1,4 +1,5 @@
 import { Text } from "@/components/ThemedText";
+import { useThemedColors } from "@/components/useThemedColors";
 import ExpoFoundationModelsModule, {
   GenerationResponse,
 } from "@/modules/expo-foundation-models";
@@ -10,7 +11,6 @@ import {
   StyleSheet,
   TextInput,
   View,
-  useColorScheme,
 } from "react-native";
 
 export default function BasicGenerationScreen() {
@@ -18,19 +18,7 @@ export default function BasicGenerationScreen() {
   const [response, setResponse] = useState<GenerationResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  const colors = {
-    text: isDark ? "#FFFFFF" : "#000000",
-    background: isDark ? "#000000" : "#FFFFFF",
-    border: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(128, 128, 128, 0.3)",
-    placeholder: isDark
-      ? "rgba(255, 255, 255, 0.4)"
-      : "rgba(128, 128, 128, 0.5)",
-    button: isDark ? "#FFFFFF" : "#000000",
-    buttonText: isDark ? "#000000" : "#FFFFFF",
-  };
+  const colors = useThemedColors();
 
   const generateText = async () => {
     if (!prompt.trim()) return;
@@ -82,6 +70,7 @@ export default function BasicGenerationScreen() {
                 color: colors.text,
               },
             ]}
+            autoFocus={true}
             value={prompt}
             onChangeText={setPrompt}
             placeholder="Write a poem about..."
@@ -171,7 +160,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
   },
   inputSection: {
     marginBottom: 20,

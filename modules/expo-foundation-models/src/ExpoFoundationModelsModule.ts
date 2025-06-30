@@ -16,7 +16,7 @@ declare class ExpoFoundationModelsModule extends NativeModule {
   // Foundation Models Methods
   checkAvailability(): Promise<FoundationModelsAvailability>;
   generateText(request: GenerationRequest): Promise<GenerationResponse>;
-  generateStructuredData?(
+  generateStructuredData(
     request: StructuredGenerationRequest
   ): Promise<StructuredGenerationResponse>;
 

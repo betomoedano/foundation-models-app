@@ -1,18 +1,18 @@
+import { Text } from "@/components/ThemedText";
+import { useThemedColors } from "@/components/useThemedColors";
 import ExpoFoundationModelsModule, {
   StructuredGenerationResponse,
 } from "@/modules/expo-foundation-models";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
-  Button,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
 
-// Predefined schema examples
 const SCHEMA_EXAMPLES = {
   userProfile: {
     name: "User Profile",
@@ -23,58 +23,28 @@ const SCHEMA_EXAMPLES = {
   product: {
     name: "Product Information",
     description: "Generate product details for e-commerce",
-    example: "Create a product for a wireless bluetooth headphone",
+    example: "Create a product for wireless bluetooth headphones",
   },
   event: {
     name: "Event Details",
     description: "Generate event information",
-    example: "Create an event for a tech conference about AI in Palo Alto",
+    example: "Create a tech conference about AI in Palo Alto",
   },
 };
 
 export default function StructuredDataScreen() {
-  const [prompt, setPrompt] = useState("");
-  const [selectedSchema, setSelectedSchema] = useState<
-    "userProfile" | "product" | "event"
-  >("userProfile");
+  const [prompt, setPrompt] = useState(SCHEMA_EXAMPLES.userProfile.example);
+  const [selectedSchema, setSelectedSchema] =
+    useState<keyof typeof SCHEMA_EXAMPLES>("userProfile");
   const [response, setResponse] = useState<StructuredGenerationResponse | null>(
     null
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkAvailability();
-    // Set example prompt for default schema
-    setPrompt(SCHEMA_EXAMPLES.userProfile.example);
-  }, []);
-
-  const checkAvailability = async () => {
-    try {
-      const availability = await ExpoFoundationModelsModule.checkAvailability();
-      setIsAvailable(availability.isAvailable);
-    } catch (err) {
-      console.error("Failed to check availability:", err);
-      setIsAvailable(false);
-    }
-  };
+  const colors = useThemedColors();
 
   const generateStructuredData = async () => {
-    if (!prompt.trim()) {
-      setError("Please enter a prompt");
-      return;
-    }
-
-    if (!isAvailable) {
-      setError("Foundation Models is not available on this device");
-      return;
-    }
-
-    if (!ExpoFoundationModelsModule.generateStructuredData) {
-      setError("Structured data generation not supported on this platform");
-      return;
-    }
+    if (!prompt.trim()) return;
 
     try {
       setLoading(true);
@@ -86,7 +56,6 @@ export default function StructuredDataScreen() {
         schemaType: selectedSchema,
       });
 
-      // Check if there's an error in the response
       if ("error" in result && result.error) {
         setError(result.error as string);
       } else {
@@ -103,155 +72,158 @@ export default function StructuredDataScreen() {
     }
   };
 
-  const selectSchemaExample = (key: "userProfile" | "product" | "event") => {
+  const selectSchema = (key: keyof typeof SCHEMA_EXAMPLES) => {
     setSelectedSchema(key);
-    const example = SCHEMA_EXAMPLES[key];
-    setPrompt(example.example);
+    setPrompt(SCHEMA_EXAMPLES[key].example);
+    setResponse(null);
+    setError(null);
   };
 
   const clearAll = () => {
-    setPrompt("");
+    setPrompt(SCHEMA_EXAMPLES[selectedSchema].example);
     setResponse(null);
     setError(null);
-    setPrompt(SCHEMA_EXAMPLES[selectedSchema].example);
   };
 
   return (
     <ScrollView
-      style={styles.container}
       contentInsetAdjustmentBehavior="automatic"
+      style={styles.container}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Structured Data Generation</Text>
-        <Text style={styles.subtitle}>
-          Generate JSON data that matches specific schemas
-        </Text>
-
-        {/* Schema Selection */}
-        <View style={styles.schemaCard}>
-          <Text style={styles.label}>Schema Type:</Text>
-
-          <View style={styles.schemaExamples}>
+        <View style={styles.section}>
+          <Text size="caption" style={styles.label}>
+            SCHEMA TYPE
+          </Text>
+          <View style={styles.schemaButtons}>
             {Object.entries(SCHEMA_EXAMPLES).map(([key, schema]) => (
-              <Button
+              <Pressable
                 key={key}
-                title={schema.name}
+                style={({ pressed }) => [
+                  styles.schemaButton,
+                  selectedSchema === key && {
+                    backgroundColor: colors.button,
+                    borderColor: colors.button,
+                  },
+                  { borderColor: colors.border },
+                  pressed && styles.buttonPressed,
+                ]}
                 onPress={() =>
-                  selectSchemaExample(
-                    key as "userProfile" | "product" | "event"
-                  )
+                  selectSchema(key as keyof typeof SCHEMA_EXAMPLES)
                 }
-                color={selectedSchema === key ? "#007AFF" : "#666"}
-              />
+              >
+                <Text
+                  size="caption"
+                  style={[
+                    styles.schemaButtonText,
+                    selectedSchema === key && { color: colors.buttonText },
+                  ]}
+                >
+                  {schema.name}
+                </Text>
+              </Pressable>
             ))}
           </View>
-
-          <View style={styles.schemaDisplay}>
-            <Text style={styles.schemaDescription}>
-              {SCHEMA_EXAMPLES[selectedSchema].description}
-            </Text>
-          </View>
+          <Text style={styles.schemaDescription}>
+            {SCHEMA_EXAMPLES[selectedSchema].description}
+          </Text>
         </View>
 
-        {/* Prompt Input */}
-        <View style={styles.inputCard}>
-          <Text style={styles.label}>Prompt:</Text>
+        <View style={styles.section}>
+          <Text size="caption" style={styles.label}>
+            PROMPT
+          </Text>
           <TextInput
-            style={styles.textInput}
+            style={[
+              styles.textInput,
+              {
+                borderColor: colors.border,
+                color: colors.text,
+              },
+            ]}
             value={prompt}
             onChangeText={setPrompt}
             placeholder="Describe what you want to generate..."
+            placeholderTextColor={colors.placeholder}
             multiline
             numberOfLines={3}
             textAlignVertical="top"
           />
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionCard}>
-          <View style={styles.buttonRow}>
-            <View style={styles.buttonContainer}>
-              <Button
-                title="Generate"
-                onPress={generateStructuredData}
-                disabled={loading || !prompt.trim()}
-              />
-            </View>
-            <View style={styles.buttonContainer}>
-              <Button title="Clear" onPress={clearAll} color="#666" />
-            </View>
-          </View>
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              {
+                backgroundColor: colors.button,
+                borderColor: colors.button,
+              },
+              pressed && styles.buttonPressed,
+              (!prompt.trim() || loading) && styles.buttonDisabled,
+            ]}
+            onPress={generateStructuredData}
+            disabled={!prompt.trim() || loading}
+          >
+            {loading ? (
+              <View style={styles.buttonContent}>
+                <ActivityIndicator size="small" color={colors.buttonText} />
+                <Text
+                  style={[
+                    styles.buttonText,
+                    { color: colors.buttonText, marginLeft: 8 },
+                  ]}
+                >
+                  Generating...
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.buttonText, { color: colors.buttonText }]}>
+                Generate
+              </Text>
+            )}
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              { borderColor: colors.border },
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={clearAll}
+          >
+            <Text style={styles.buttonText}>Clear</Text>
+          </Pressable>
         </View>
 
-        {/* Loading */}
-        {loading && (
-          <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>
-              Generating structured data...
-            </Text>
-          </View>
-        )}
-
-        {/* Error */}
         {error && (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorText}>Error: {error}</Text>
+          <View style={styles.section}>
+            <Text size="caption" style={styles.errorLabel}>
+              ERROR
+            </Text>
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
-        {/* Response */}
         {response && !loading && (
-          <View style={styles.responseCard}>
-            <Text style={styles.responseLabel}>Generated Data:</Text>
-
-            {/* Structured Data */}
+          <View style={styles.section}>
+            <Text size="caption" style={styles.label}>
+              GENERATED DATA
+            </Text>
             <View style={styles.dataContainer}>
-              <Text style={styles.dataTitle}>
-                Generated Data ({response.schemaType}):
-              </Text>
               <Text style={styles.dataText}>
                 {JSON.stringify(response.data, null, 2)}
               </Text>
             </View>
 
-            {/* Metadata */}
-            <View style={styles.metadataContainer}>
-              <Text style={styles.metadataTitle}>Generation Details:</Text>
-              <Text style={styles.metadataText}>
-                • Tokens: {response.metadata.tokenCount}
-              </Text>
-              <Text style={styles.metadataText}>
-                • Time: {response.metadata.generationTime.toFixed(2)}s
-              </Text>
-              <Text style={styles.metadataText}>
-                • Model: {response.metadata.model}
-              </Text>
-              <Text style={styles.metadataText}>
-                • Schema Type: {response.schemaType}
+            <View style={[styles.metadata, { borderTopColor: colors.border }]}>
+              <Text size="caption" style={styles.metadataText}>
+                {response.metadata.tokenCount} tokens •{" "}
+                {response.metadata.generationTime.toFixed(1)}s
               </Text>
             </View>
-          </View>
-        )}
-
-        {/* Status Info */}
-        {isAvailable === false && (
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Not Available</Text>
-            <Text style={styles.infoText}>
-              Foundation Models is not available on this device. iOS 26+ with
-              Apple Intelligence is required for structured data generation.
-            </Text>
-          </View>
-        )}
-
-        {isAvailable === true && (
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Ready to Generate</Text>
-            <Text style={styles.infoText}>
-              Foundation Models is available! Select a schema above and enter a
-              prompt to generate structured JSON data.
-            </Text>
           </View>
         )}
       </View>
@@ -262,188 +234,101 @@ export default function StructuredDataScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 30,
-  },
-  schemaCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  inputCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  actionCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  loadingCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    alignItems: "center",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  errorCard: {
-    backgroundColor: "#fef2f2",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  responseCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  },
-  infoCard: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 12,
-    padding: 20,
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+  section: {
+    marginBottom: 32,
   },
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+    opacity: 0.6,
     marginBottom: 12,
   },
-  schemaExamples: {
+  errorLabel: {
+    opacity: 0.6,
+    marginBottom: 12,
+    color: "red",
+  },
+  schemaButtons: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  schemaDisplay: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
+  schemaButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  schemaButtonText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   schemaDescription: {
     fontSize: 14,
-    color: "#666",
+    opacity: 0.6,
     fontStyle: "italic",
   },
   textInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
     fontSize: 16,
-    minHeight: 80,
+    lineHeight: 24,
+    minHeight: 100,
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 8,
   },
-  buttonRow: {
+  actions: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  buttonContainer: {
+  button: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
   },
-  loadingText: {
-    marginTop: 10,
-    color: "#666",
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  buttonDisabled: {
+    opacity: 0.3,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
   },
   errorText: {
-    color: "#dc3545",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  responseLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
+    color: "red",
   },
   dataContainer: {
-    backgroundColor: "#f0f9ff",
+    backgroundColor: "rgba(128, 128, 128, 0.05)",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  dataTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1e40af",
-    marginBottom: 8,
+    padding: 16,
   },
   dataText: {
     fontSize: 12,
     fontFamily: "monospace",
-    color: "#1e40af",
-    lineHeight: 16,
+    lineHeight: 18,
   },
-  rawContainer: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  rawTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
-  },
-  rawText: {
-    fontSize: 12,
-    fontFamily: "monospace",
-    color: "#666",
-    lineHeight: 16,
-  },
-  metadataContainer: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    padding: 12,
-  },
-  metadataTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
+  metadata: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   metadataText: {
-    fontSize: 12,
-    color: "#666",
-    lineHeight: 16,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1e40af",
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#1e40af",
-    lineHeight: 20,
+    opacity: 0.5,
   },
 });
