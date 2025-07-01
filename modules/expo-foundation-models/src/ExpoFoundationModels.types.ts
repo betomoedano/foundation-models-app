@@ -4,7 +4,6 @@ export interface FoundationModelsAvailability {
   reason?: string;
   deviceSupported: boolean;
   osVersion: string;
-  frameworkVersion?: string;
 }
 
 // Text Generation Types
