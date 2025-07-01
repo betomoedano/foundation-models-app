@@ -1,22 +1,23 @@
 import { Text } from "@/components/ThemedText";
+import { useGradualAnimation } from "@/components/useGradualAnimation";
 import { useThemedColors } from "@/components/useThemedColors";
 import ExpoFoundationModelsModule, {
   StreamingSession,
   StructuredStreamingChunk,
 } from "@/modules/expo-foundation-models";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 
 export default function StreamingStructuredScreen() {
+  const { height } = useGradualAnimation();
   const [prompt, setPrompt] = useState(
     "Create a product for high-end wireless noise-cancelling headphones"
   );
@@ -67,6 +68,12 @@ export default function StreamingStructuredScreen() {
 
     return () => {
       subscriptionsRef.current.forEach((sub) => sub.remove());
+    };
+  }, []);
+
+  const keyboardPadding = useAnimatedStyle(() => {
+    return {
+      height: height.value,
     };
   }, []);
 
@@ -131,12 +138,8 @@ export default function StreamingStructuredScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <View style={styles.container}>
       <ScrollView
-        style={styles.scrollView}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
@@ -259,7 +262,9 @@ export default function StreamingStructuredScreen() {
           )}
         </View>
       </View>
-    </KeyboardAvoidingView>
+
+      <Animated.View style={keyboardPadding} />
+    </View>
   );
 }
 
@@ -267,12 +272,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: 20,
-    paddingBottom: 200, // Space for input area
   },
   section: {
     marginBottom: 32,
@@ -309,10 +310,6 @@ const styles = StyleSheet.create({
     color: "red",
   },
   inputArea: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     padding: 20,
   },

@@ -185,6 +185,7 @@ export default function StreamingChatScreen() {
                 color: colors.text,
               },
             ]}
+            autoFocus
             value={prompt}
             onChangeText={setPrompt}
             placeholder="Enter your prompt..."
