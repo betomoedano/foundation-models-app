@@ -65,9 +65,32 @@ export interface StreamingSession {
   error?: string;
 }
 
+// Structured Streaming Types
+export interface StructuredStreamingRequest {
+  prompt: string;
+  sessionId?: string;
+}
+
+export interface StructuredStreamingSession {
+  sessionId: string;
+  isActive: boolean;
+  totalTokens: number;
+  schemaType: string;
+  error?: string;
+}
+
+export interface Product {
+  name?: string;
+  price?: number;
+  category?: string;
+  description?: string;
+  features?: string[];
+  inStock?: boolean;
+}
+
 export interface StructuredStreamingChunk {
   sessionId: string;
-  data: any;
+  data: Product;
   schemaType: string;
   isComplete: boolean;
   isPartial: boolean;

@@ -106,6 +106,7 @@ struct UserProfileRecord: Record {
   var location: LocationRecord
 }
 
+
 // MARK: - Streaming Records
 
 struct StreamingRequest: Record {
@@ -174,6 +175,33 @@ struct StructuredStreamingChunkEvent: Record {
   
   @Field
   var isPartial: Bool = false
+}
+
+// MARK: - Structured Streaming Records
+
+struct StructuredStreamingRequest: Record {
+  @Field
+  var prompt: String = ""
+  
+  @Field
+  var sessionId: String? = nil
+}
+
+struct StructuredStreamingSession: Record {
+  @Field
+  var sessionId: String = ""
+  
+  @Field
+  var isActive: Bool = true
+  
+  @Field
+  var totalTokens: Int = 0
+  
+  @Field
+  var schemaType: String = ""
+  
+  @Field
+  var error: String? = nil
 }
 
 
