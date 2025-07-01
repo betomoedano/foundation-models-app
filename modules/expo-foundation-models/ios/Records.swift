@@ -106,4 +106,74 @@ struct UserProfileRecord: Record {
   var location: LocationRecord
 }
 
+// MARK: - Streaming Records
+
+struct StreamingRequest: Record {
+  @Field
+  var prompt: String = ""
+  
+  @Field
+  var sessionId: String? = nil
+}
+
+struct StreamingSession: Record {
+  @Field
+  var sessionId: String = ""
+  
+  @Field
+  var isActive: Bool = true
+  
+  @Field
+  var totalTokens: Int = 0
+  
+  @Field
+  var error: String? = nil
+}
+
+// MARK: - Event Records
+
+struct StreamingChunkEvent: Record {
+  @Field
+  var sessionId: String = ""
+  
+  @Field
+  var content: String = ""
+  
+  @Field
+  var isComplete: Bool = false
+  
+  @Field
+  var tokenCount: Int = 0
+}
+
+struct StreamingErrorEvent: Record {
+  @Field
+  var sessionId: String = ""
+  
+  @Field
+  var error: String = ""
+}
+
+struct StreamingCancelledEvent: Record {
+  @Field
+  var sessionId: String = ""
+}
+
+struct StructuredStreamingChunkEvent: Record {
+  @Field
+  var sessionId: String = ""
+  
+  @Field
+  var data: [String: Any] = [:]
+  
+  @Field
+  var schemaType: String = ""
+  
+  @Field
+  var isComplete: Bool = false
+  
+  @Field
+  var isPartial: Bool = false
+}
+
 

@@ -25,7 +25,7 @@ public class ExpoFoundationModelsModule: Module {
       return await generateStructuredData(request: request)
     }
     
-    AsyncFunction("startStreamingSession") { (request: [String: Any]) -> [String: Any] in
+    AsyncFunction("startStreamingSession") { (request: StreamingRequest) -> StreamingSession in
       return await startStreamingSession(request: request)
     }
     
@@ -156,107 +156,85 @@ public class ExpoFoundationModelsModule: Module {
   
   // MARK: - Streaming Implementation
   
-  private func startStreamingSession(request: [String: Any]) async -> [String: Any] {
-    guard let prompt = request["prompt"] as? String, !prompt.isEmpty else {
-      return [
-        "sessionId": "",
-        "isActive": false,
-        "totalTokens": 0,
-        "error": "Prompt is required and cannot be empty"
-      ]
-    }
+  private func startStreamingSession(request: StreamingRequest) async -> StreamingSession {
+    let session = StreamingSession()
     
     if #available(iOS 26.0, macOS 26.0, *) {
-      do {
-        // Generate a unique session ID
-        let sessionId = UUID().uuidString
-        
-        // Create a new language model session
-        let session = LanguageModelSession()
-        
-        // Store the session
-        streamingSessions[sessionId] = session
-        
-        // Create and store the streaming task
-        let streamingTask = Task {
-          do {
-            let promptObj = Prompt(prompt)
-            let stream = session.streamResponse(to: promptObj)
-            
-            for try await currentContent in stream {
-              // Check if task is cancelled
-              if Task.isCancelled {
-                throw CancellationError()
-              }
-              
-              // The stream returns the full accumulated content each time
-              // We'll send the full content and let JS handle it
-              
-              // Estimate total tokens for the full content
-              let currentTokens = currentContent.count / 4
-              
-              // Send the full content as a chunk event
-              sendEvent("onStreamingChunk", [
-                "sessionId": sessionId,
-                "content": currentContent,
-                "isComplete": false,
-                "tokenCount": currentTokens
-              ])
+      // Generate a unique session ID
+      let sessionId = UUID().uuidString
+      session.sessionId = sessionId
+      
+      // Create a new language model session
+      let languageSession = LanguageModelSession()
+      
+      // Store the session
+      streamingSessions[sessionId] = languageSession
+      
+      // Create and store the streaming task
+      let streamingTask = Task {
+        do {
+          let promptObj = Prompt(request.prompt)
+          let stream = languageSession.streamResponse(to: promptObj)
+          
+          for try await currentContent in stream {
+            // Check if task is cancelled
+            if Task.isCancelled {
+              throw CancellationError()
             }
             
-            // Send completion event
-            sendEvent("onStreamingChunk", [
-              "sessionId": sessionId,
-              "content": "",
-              "isComplete": true,
-              "tokenCount": 0
-            ])
+            // The stream returns the full accumulated content each time
+            // We'll send the full content and let JS handle it
             
-            // Clean up
-            streamingSessions.removeValue(forKey: sessionId)
-            streamingTasks.removeValue(forKey: sessionId)
+            // Estimate total tokens for the full content
+            let currentTokens = currentContent.count / 4
             
-          } catch is CancellationError {
-            // Task was cancelled, no need to send error
-            streamingSessions.removeValue(forKey: sessionId)
-            streamingTasks.removeValue(forKey: sessionId)
-          } catch {
-            // Send error event
-            sendEvent("onStreamingError", [
-              "sessionId": sessionId,
-              "error": error.localizedDescription
-            ])
-            
-            // Clean up
-            streamingSessions.removeValue(forKey: sessionId)
-            streamingTasks.removeValue(forKey: sessionId)
+            // Send the full content as a chunk event
+            let chunkEvent = StreamingChunkEvent()
+            chunkEvent.sessionId = sessionId
+            chunkEvent.content = currentContent
+            chunkEvent.isComplete = false
+            chunkEvent.tokenCount = currentTokens
+            sendEvent("onStreamingChunk", chunkEvent.toDictionary())
           }
+          
+          // Send completion event
+          let completionEvent = StreamingChunkEvent()
+          completionEvent.sessionId = sessionId
+          completionEvent.content = ""
+          completionEvent.isComplete = true
+          completionEvent.tokenCount = 0
+          sendEvent("onStreamingChunk", completionEvent.toDictionary())
+          
+          // Clean up
+          streamingSessions.removeValue(forKey: sessionId)
+          streamingTasks.removeValue(forKey: sessionId)
+          
+        } catch is CancellationError {
+          // Task was cancelled, no need to send error
+          streamingSessions.removeValue(forKey: sessionId)
+          streamingTasks.removeValue(forKey: sessionId)
+        } catch {
+          // Send error event
+          let errorEvent = StreamingErrorEvent()
+          errorEvent.sessionId = sessionId
+          errorEvent.error = error.localizedDescription
+          sendEvent("onStreamingError", errorEvent.toDictionary())
+          
+          // Clean up
+          streamingSessions.removeValue(forKey: sessionId)
+          streamingTasks.removeValue(forKey: sessionId)
         }
-        
-        // Store the task for cancellation
-        streamingTasks[sessionId] = streamingTask
-        
-        return [
-          "sessionId": sessionId,
-          "isActive": true,
-          "totalTokens": 0
-        ]
-        
-      } catch {
-        return [
-          "sessionId": "",
-          "isActive": false,
-          "totalTokens": 0,
-          "error": "Failed to start streaming session: \(error.localizedDescription)"
-        ]
       }
+      
+      // Store the task for cancellation
+      streamingTasks[sessionId] = streamingTask
+      
+      return session
     } else {
-      return [
-        "sessionId": "",
-        "isActive": false,
-        "totalTokens": 0,
-        "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
-      ]
+      let unavailableSession = StreamingSession()
+      unavailableSession.error = "Foundation Models requires iOS 26.0+ or macOS 26.0+"
+      unavailableSession.isActive = false
+      return unavailableSession
     }
   }
   
@@ -270,9 +248,9 @@ public class ExpoFoundationModelsModule: Module {
     // Remove the session
     if streamingSessions.removeValue(forKey: sessionId) != nil {
       // Send cancellation event
-      sendEvent("onStreamingCancelled", [
-        "sessionId": sessionId
-      ])
+      let cancelledEvent = StreamingCancelledEvent()
+      cancelledEvent.sessionId = sessionId
+      sendEvent("onStreamingCancelled", cancelledEvent.toDictionary())
     }
   }
   
@@ -356,23 +334,23 @@ public class ExpoFoundationModelsModule: Module {
               hasCompleteData = productData.count == 6
               
               // Send structured chunk event
-              sendEvent("onStructuredStreamingChunk", [
-                "sessionId": sessionId,
-                "data": productData,
-                "schemaType": "product",
-                "isComplete": false,
-                "isPartial": !hasCompleteData
-              ])
+              let structuredEvent = StructuredStreamingChunkEvent()
+              structuredEvent.sessionId = sessionId
+              structuredEvent.data = productData
+              structuredEvent.schemaType = "product"
+              structuredEvent.isComplete = false
+              structuredEvent.isPartial = !hasCompleteData
+              sendEvent("onStructuredStreamingChunk", structuredEvent.toDictionary())
             }
             
             // Send completion event
-            sendEvent("onStructuredStreamingChunk", [
-              "sessionId": sessionId,
-              "data": [:],
-              "schemaType": "product",
-              "isComplete": true,
-              "isPartial": false
-            ])
+            let completionStructuredEvent = StructuredStreamingChunkEvent()
+            completionStructuredEvent.sessionId = sessionId
+            completionStructuredEvent.data = [:]
+            completionStructuredEvent.schemaType = "product"
+            completionStructuredEvent.isComplete = true
+            completionStructuredEvent.isPartial = false
+            sendEvent("onStructuredStreamingChunk", completionStructuredEvent.toDictionary())
             
             // Clean up
             streamingSessions.removeValue(forKey: sessionId)
@@ -384,10 +362,10 @@ public class ExpoFoundationModelsModule: Module {
             streamingTasks.removeValue(forKey: sessionId)
           } catch {
             // Send error event
-            sendEvent("onStreamingError", [
-              "sessionId": sessionId,
-              "error": error.localizedDescription
-            ])
+            let errorEvent = StreamingErrorEvent()
+            errorEvent.sessionId = sessionId
+            errorEvent.error = error.localizedDescription
+            sendEvent("onStreamingError", errorEvent.toDictionary())
             
             // Clean up
             streamingSessions.removeValue(forKey: sessionId)

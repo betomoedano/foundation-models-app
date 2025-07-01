@@ -62,7 +62,7 @@ export interface StreamingSession {
   sessionId: string;
   isActive: boolean;
   totalTokens: number;
-  schemaType?: string;
+  error?: string;
 }
 
 export interface StructuredStreamingChunk {
