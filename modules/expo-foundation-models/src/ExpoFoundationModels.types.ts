@@ -18,6 +18,7 @@ export interface GenerationResponse {
     generationTime: number;
     model: string;
   };
+  error?: string;
 }
 
 // Structured Data Generation Types

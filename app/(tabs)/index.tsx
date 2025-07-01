@@ -1,6 +1,6 @@
-import { ScrollView, View, StyleSheet, Pressable } from "react-native";
 import { Text } from "@/components/ThemedText";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 type Example = {
   title: string;
@@ -35,13 +35,15 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <ScrollView 
+    <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text size="header" style={styles.title}>Examples</Text>
-        
+        <Text size="header" style={styles.title}>
+          Examples
+        </Text>
+
         {examples.map((example, index) => (
           <Pressable
             key={example.route}
@@ -50,7 +52,7 @@ export default function Home() {
               pressed && styles.cardPressed,
               index === examples.length - 1 && styles.lastCard,
             ]}
-            onPress={() => router.push(example.route)}
+            onPress={() => router.push(example.route as Href)}
           >
             <Text style={styles.cardTitle}>{example.title}</Text>
             <Text size="caption" style={styles.cardDescription}>
@@ -76,7 +78,7 @@ const styles = StyleSheet.create({
   card: {
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
+    borderBottomColor: "rgba(128, 128, 128, 0.2)",
   },
   cardPressed: {
     opacity: 0.7,
@@ -86,7 +88,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 17,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
   },
   cardDescription: {

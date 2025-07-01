@@ -8,6 +8,8 @@
 import ExpoModulesCore
 import Foundation
 
+// MARK: - Foundation Models Availability Check
+
 struct FoundationModelsAvailability: Record {
   @Field
   var isAvailable: Bool = false
@@ -20,4 +22,30 @@ struct FoundationModelsAvailability: Record {
   
   @Field
   var osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString
+}
+
+// MARK: - Text Generation
+
+struct GenerationTextRequest: Record {
+  @Field
+  var prompt: String = ""
+}
+
+struct GenerationTextResponseMetadata: Record {
+  @Field
+  var tokenCount: Int = 0
+  
+  @Field
+  var generationTime: Double = 0.0
+}
+
+struct GenerationTextResponse: Record {
+  @Field
+  var content: String = ""
+  
+  @Field
+  var metadata: GenerationTextResponseMetadata
+  
+  @Field
+  var error: String? = nil
 }

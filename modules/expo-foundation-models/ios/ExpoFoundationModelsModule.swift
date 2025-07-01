@@ -20,7 +20,7 @@ public class ExpoFoundationModelsModule: Module {
       return await getFoundationModelsAvailability()
     }
     
-    AsyncFunction("generateText") { (request: [String: Any]) -> [String: Any] in
+    AsyncFunction("generateText") { (request: GenerationTextRequest) -> GenerationTextResponse in
       return await generateText(request: request)
     }
     
@@ -68,29 +68,15 @@ public class ExpoFoundationModelsModule: Module {
   
   // MARK: - Text Generation
   
-  private func generateText(request: [String: Any]) async -> [String: Any] {
-    guard let prompt = request["prompt"] as? String, !prompt.isEmpty else {
-      return [
-        "content": "",
-        "metadata": [
-          "tokenCount": 0,
-          "generationTime": 0.0,
-          "model": "none"
-        ],
-        "error": "Prompt is required and cannot be empty"
-      ]
-    }
+  private func generateText(request: GenerationTextRequest) async -> GenerationTextResponse {
+    let textResponse = GenerationTextResponse()
     
-    #if canImport(FoundationModels)
     if #available(iOS 26.0, macOS 26.0, *) {
       do {
         let startTime = Date()
-        
-        // Create a language model session
+        let prompt = Prompt(request.prompt)
         let session = LanguageModelSession()
         
-        // Create prompt and generate response
-        let prompt = Prompt(prompt)
         let response = try await session.respond(to: prompt)
         
         let endTime = Date()
@@ -99,48 +85,18 @@ public class ExpoFoundationModelsModule: Module {
         // Estimate token count (rough approximation: 1 token ≈ 4 characters)
         let estimatedTokenCount = response.content.count / 4
         
-        return [
-          "content": response.content,
-          "metadata": [
-            "tokenCount": estimatedTokenCount,
-            "generationTime": generationTime,
-            "model": "Foundation Models (iOS 26+)"
-          ]
-        ]
+        textResponse.content = response.content
+        textResponse.metadata = GenerationTextResponseMetadata(tokenCount: estimatedTokenCount, generationTime: generationTime)
         
+        return textResponse
       } catch {
-        return [
-          "content": "",
-          "metadata": [
-            "tokenCount": 0,
-            "generationTime": 0.0,
-            "model": "Foundation Models (iOS 26+)"
-          ],
-          "error": "Text generation failed: \(error.localizedDescription)"
-        ]
+        textResponse.error = error.localizedDescription
+        return textResponse
       }
     } else {
-      return [
-        "content": "",
-        "metadata": [
-          "tokenCount": 0,
-          "generationTime": 0.0,
-          "model": "none"
-        ],
-        "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
-      ]
+      textResponse.error = "Foundation Models requires iOS 26.0+ or macOS 26.0+"
+      return textResponse
     }
-    #else
-    return [
-      "content": "",
-      "metadata": [
-        "tokenCount": 0,
-        "generationTime": 0.0,
-        "model": "none"
-      ],
-      "error": "Foundation Models framework not available in this build"
-    ]
-    #endif
   }
   
   // MARK: - Structured Data Generation

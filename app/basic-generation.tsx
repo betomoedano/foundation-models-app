@@ -32,8 +32,8 @@ export default function BasicGenerationScreen() {
         prompt: prompt.trim(),
       });
 
-      if ("error" in result && result.error) {
-        setError(result.error as string);
+      if (result.error) {
+        setError(result.error);
       } else {
         setResponse(result);
       }
