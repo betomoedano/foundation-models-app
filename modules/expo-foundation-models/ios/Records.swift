@@ -49,3 +49,61 @@ struct GenerationTextResponse: Record {
   @Field
   var error: String? = nil
 }
+
+// MARK: - Structured Data Generation
+
+struct StructuredGenerationRequest: Record {
+  @Field
+  var prompt: String = ""
+}
+
+struct StructuredGenerationMetadata: Record {
+  @Field
+  var tokenCount: Int = 0
+  
+  @Field
+  var generationTime: Double = 0.0
+  
+  @Field
+  var model: String = "Foundation Models (iOS 26+)"
+}
+
+struct StructuredGenerationResponse: Record {
+  @Field
+  var data: [String: Any] = [:]
+  
+  @Field
+  var metadata: StructuredGenerationMetadata
+  
+  @Field
+  var error: String? = nil
+}
+
+// MARK: - Data Structure Records
+
+struct LocationRecord: Record {
+  @Field
+  var city: String = ""
+  
+  @Field
+  var country: String = ""
+}
+
+struct UserProfileRecord: Record {
+  @Field
+  var name: String = ""
+  
+  @Field
+  var age: Int = 0
+  
+  @Field
+  var email: String = ""
+  
+  @Field
+  var interests: [String] = []
+  
+  @Field
+  var location: LocationRecord
+}
+
+

@@ -13,29 +13,10 @@ import {
   View,
 } from "react-native";
 
-const SCHEMA_EXAMPLES = {
-  userProfile: {
-    name: "User Profile",
-    description: "Generate a user profile with basic information",
-    example:
-      "Create a profile for a 25-year-old software developer from San Francisco",
-  },
-  product: {
-    name: "Product Information",
-    description: "Generate product details for e-commerce",
-    example: "Create a product for wireless bluetooth headphones",
-  },
-  event: {
-    name: "Event Details",
-    description: "Generate event information",
-    example: "Create a tech conference about AI in Palo Alto",
-  },
-};
+const DEFAULT_PROMPT = "Create a profile for a 25-year-old software developer from San Francisco";
 
 export default function StructuredDataScreen() {
-  const [prompt, setPrompt] = useState(SCHEMA_EXAMPLES.userProfile.example);
-  const [selectedSchema, setSelectedSchema] =
-    useState<keyof typeof SCHEMA_EXAMPLES>("userProfile");
+  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [response, setResponse] = useState<StructuredGenerationResponse | null>(
     null
   );
@@ -53,7 +34,6 @@ export default function StructuredDataScreen() {
 
       const result = await ExpoFoundationModelsModule.generateStructuredData({
         prompt: prompt.trim(),
-        schemaType: selectedSchema,
       });
 
       if ("error" in result && result.error) {
@@ -72,15 +52,8 @@ export default function StructuredDataScreen() {
     }
   };
 
-  const selectSchema = (key: keyof typeof SCHEMA_EXAMPLES) => {
-    setSelectedSchema(key);
-    setPrompt(SCHEMA_EXAMPLES[key].example);
-    setResponse(null);
-    setError(null);
-  };
-
   const clearAll = () => {
-    setPrompt(SCHEMA_EXAMPLES[selectedSchema].example);
+    setPrompt(DEFAULT_PROMPT);
     setResponse(null);
     setError(null);
   };
@@ -93,44 +66,6 @@ export default function StructuredDataScreen() {
       keyboardDismissMode="on-drag"
     >
       <View style={styles.content}>
-        <View style={styles.section}>
-          <Text size="caption" style={styles.label}>
-            SCHEMA TYPE
-          </Text>
-          <View style={styles.schemaButtons}>
-            {Object.entries(SCHEMA_EXAMPLES).map(([key, schema]) => (
-              <Pressable
-                key={key}
-                style={({ pressed }) => [
-                  styles.schemaButton,
-                  selectedSchema === key && {
-                    backgroundColor: colors.button,
-                    borderColor: colors.button,
-                  },
-                  { borderColor: colors.border },
-                  pressed && styles.buttonPressed,
-                ]}
-                onPress={() =>
-                  selectSchema(key as keyof typeof SCHEMA_EXAMPLES)
-                }
-              >
-                <Text
-                  size="caption"
-                  style={[
-                    styles.schemaButtonText,
-                    selectedSchema === key && { color: colors.buttonText },
-                  ]}
-                >
-                  {schema.name}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={styles.schemaDescription}>
-            {SCHEMA_EXAMPLES[selectedSchema].description}
-          </Text>
-        </View>
-
         <View style={styles.section}>
           <Text size="caption" style={styles.label}>
             PROMPT
@@ -249,27 +184,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     marginBottom: 12,
     color: "red",
-  },
-  schemaButtons: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 12,
-  },
-  schemaButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  schemaButtonText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  schemaDescription: {
-    fontSize: 14,
-    opacity: 0.6,
-    fontStyle: "italic",
   },
   textInput: {
     fontSize: 16,

@@ -1,10 +1,7 @@
 import ExpoModulesCore
 import Foundation
 
-// Import FoundationModels framework if available
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
 
 public class ExpoFoundationModelsModule: Module {
   // Store active streaming sessions (using Any to avoid availability issues)
@@ -24,7 +21,7 @@ public class ExpoFoundationModelsModule: Module {
       return await generateText(request: request)
     }
     
-    AsyncFunction("generateStructuredData") { (request: [String: Any]) -> [String: Any] in
+    AsyncFunction("generateStructuredData") { (request: StructuredGenerationRequest) -> StructuredGenerationResponse in
       return await generateStructuredData(request: request)
     }
     
@@ -101,177 +98,57 @@ public class ExpoFoundationModelsModule: Module {
   
   // MARK: - Structured Data Generation
   
-  private func generateStructuredData(request: [String: Any]) async -> [String: Any] {
-    guard let prompt = request["prompt"] as? String, !prompt.isEmpty else {
-      return [
-        "data": [:],
-        "schemaType": "",
-        "metadata": [
-          "tokenCount": 0,
-          "generationTime": 0.0,
-          "model": "none"
-        ],
-        "error": "Prompt is required and cannot be empty"
-      ]
+  private func generateStructuredData(request: StructuredGenerationRequest) async -> StructuredGenerationResponse {
+    let response = StructuredGenerationResponse()
+    
+    // Validate request
+    guard !request.prompt.isEmpty else {
+      response.error = "Prompt is required and cannot be empty"
+      return response
     }
     
-    guard let schemaType = request["schemaType"] as? String else {
-      return [
-        "data": [:],
-        "schemaType": "",
-        "metadata": [
-          "tokenCount": 0,
-          "generationTime": 0.0,
-          "model": "none"
-        ],
-        "error": "Schema type is required for structured data generation"
-      ]
-    }
     
-    #if canImport(FoundationModels)
     if #available(iOS 26.0, macOS 26.0, *) {
       do {
         let startTime = Date()
         
         // Create a language model session
         let session = LanguageModelSession()
+        let promptObj = Prompt(request.prompt)
         
-        // Generate structured data based on schema type
-        switch schemaType {
-        case "userProfile":
-          let promptObj = Prompt(prompt)
-          let profileResponse = try await session.respond(to: promptObj, generating: UserProfile.self)
-          let profile = profileResponse.content
-          
-          let endTime = Date()
-          let generationTime = endTime.timeIntervalSince(startTime)
-          
-          // Convert to dictionary for JSON serialization
-          let profileData: [String: Any] = [
-            "name": profile.name,
-            "age": profile.age,
-            "email": profile.email,
-            "interests": profile.interests,
-            "location": [
-              "city": profile.location.city,
-              "country": profile.location.country
-            ]
-          ]
-          
-          return [
-            "data": profileData,
-            "schemaType": schemaType,
-            "metadata": [
-              "tokenCount": estimateTokenCount(from: profileData),
-              "generationTime": generationTime,
-              "model": "Foundation Models (iOS 26+)"
-            ]
-          ]
-          
-        case "product":
-          let promptObj = Prompt(prompt)
-          let productResponse = try await session.respond(to: promptObj, generating: Product.self)
-          let product = productResponse.content
-          
-          let endTime = Date()
-          let generationTime = endTime.timeIntervalSince(startTime)
-          
-          let productData: [String: Any] = [
-            "name": product.name,
-            "price": product.price,
-            "category": product.category,
-            "description": product.description,
-            "features": product.features,
-            "inStock": product.inStock
-          ]
-          
-          return [
-            "data": productData,
-            "schemaType": schemaType,
-            "metadata": [
-              "tokenCount": estimateTokenCount(from: productData),
-              "generationTime": generationTime,
-              "model": "Foundation Models (iOS 26+)"
-            ]
-          ]
-          
-        case "event":
-          let promptObj = Prompt(prompt)
-          let eventResponse = try await session.respond(to: promptObj, generating: Event.self)
-          let event = eventResponse.content
-          
-          let endTime = Date()
-          let generationTime = endTime.timeIntervalSince(startTime)
-          
-          let eventData: [String: Any] = [
-            "title": event.title,
-            "date": event.date,
-            "time": event.time,
-            "location": event.location,
-            "description": event.description,
-            "capacity": event.capacity,
-            "ticketPrice": event.ticketPrice
-          ]
-          
-          return [
-            "data": eventData,
-            "schemaType": schemaType,
-            "metadata": [
-              "tokenCount": estimateTokenCount(from: eventData),
-              "generationTime": generationTime,
-              "model": "Foundation Models (iOS 26+)"
-            ]
-          ]
-          
-        default:
-          return [
-            "data": [:],
-            "schemaType": schemaType,
-            "metadata": [
-              "tokenCount": 0,
-              "generationTime": 0.0,
-              "model": "Foundation Models (iOS 26+)"
-            ],
-            "error": "Unsupported schema type: \(schemaType). Supported types: userProfile, product, event"
-          ]
-        }
+        // Generate user profile data
+        let profileResponse = try await session.respond(to: promptObj, generating: UserProfile.self)
+        let profile = profileResponse.content
+        
+        let record = UserProfileRecord()
+        record.name = profile.name
+        record.age = profile.age
+        record.email = profile.email
+        record.interests = profile.interests
+        
+        let locationRecord = LocationRecord()
+        locationRecord.city = profile.location.city
+        locationRecord.country = profile.location.country
+        record.location = locationRecord
+        
+        let resultData = convertToDictionary(record)
+        
+        let endTime = Date()
+        let generationTime = endTime.timeIntervalSince(startTime)
+        
+        response.data = resultData
+        response.metadata = StructuredGenerationMetadata()
+        response.metadata.tokenCount = estimateTokenCount(from: resultData)
+        response.metadata.generationTime = generationTime
         
       } catch {
-        return [
-          "data": [:],
-          "schemaType": schemaType,
-          "metadata": [
-            "tokenCount": 0,
-            "generationTime": 0.0,
-            "model": "Foundation Models (iOS 26+)"
-          ],
-          "error": "Structured data generation failed: \(error.localizedDescription)"
-        ]
+        response.error = "Structured data generation failed: \(error.localizedDescription)"
       }
     } else {
-      return [
-        "data": [:],
-        "schemaType": schemaType,
-        "metadata": [
-          "tokenCount": 0,
-          "generationTime": 0.0,
-          "model": "none"
-        ],
-        "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
-      ]
+      response.error = "Foundation Models requires iOS 26.0+ or macOS 26.0+"
     }
-    #else
-    return [
-      "data": [:],
-      "schemaType": schemaType,
-      "metadata": [
-        "tokenCount": 0,
-        "generationTime": 0.0,
-        "model": "none"
-      ],
-      "error": "Foundation Models framework not available in this build"
-    ]
-    #endif
+    
+    return response
   }
   
   // Helper function to estimate token count from structured data
@@ -283,6 +160,20 @@ public class ExpoFoundationModelsModule: Module {
     } catch {
       return 0
     }
+  }
+ 
+ 
+  private func convertToDictionary(_ record: UserProfileRecord) -> [String: Any] {
+    return [
+      "name": record.name,
+      "age": record.age,
+      "email": record.email,
+      "interests": record.interests,
+      "location": [
+        "city": record.location.city,
+        "country": record.location.country
+      ]
+    ]
   }
   
   // MARK: - Streaming Implementation
@@ -297,7 +188,6 @@ public class ExpoFoundationModelsModule: Module {
       ]
     }
     
-    #if canImport(FoundationModels)
     if #available(iOS 26.0, macOS 26.0, *) {
       do {
         // Generate a unique session ID
@@ -390,14 +280,6 @@ public class ExpoFoundationModelsModule: Module {
         "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
       ]
     }
-    #else
-    return [
-      "sessionId": "",
-      "isActive": false,
-      "totalTokens": 0,
-      "error": "Foundation Models framework not available in this build"
-    ]
-    #endif
   }
   
   private func cancelStreamingSession(sessionId: String) async {
@@ -428,7 +310,6 @@ public class ExpoFoundationModelsModule: Module {
       ]
     }
     
-    #if canImport(FoundationModels)
     if #available(iOS 26.0, macOS 26.0, *) {
       do {
         // Generate a unique session ID
@@ -562,13 +443,5 @@ public class ExpoFoundationModelsModule: Module {
         "error": "Foundation Models requires iOS 26.0+ or macOS 26.0+"
       ]
     }
-    #else
-    return [
-      "sessionId": "",
-      "isActive": false,
-      "totalTokens": 0,
-      "error": "Foundation Models framework not available in this build"
-    ]
-    #endif
   }
 }

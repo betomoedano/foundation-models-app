@@ -19,7 +19,7 @@ import Animated, { useAnimatedStyle } from "react-native-reanimated";
 export default function StreamingStructuredScreen() {
   const { height } = useGradualAnimation();
   const [prompt, setPrompt] = useState(
-    "Create a product for high-end wireless noise-cancelling headphones"
+    "Create a profile for a 25-year-old software developer from San Francisco"
   );
   const [streamingData, setStreamingData] = useState<any>(null);
   const [session, setSession] = useState<StreamingSession | null>(null);
@@ -119,7 +119,7 @@ export default function StreamingStructuredScreen() {
 
   const clearChat = () => {
     setPrompt(
-      "Create a product for high-end wireless noise-cancelling headphones"
+      "Create a profile for a 25-year-old software developer from San Francisco"
     );
     setStreamingData(null);
     setError(null);

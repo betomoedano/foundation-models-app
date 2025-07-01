@@ -24,12 +24,19 @@ export interface GenerationResponse {
 // Structured Data Generation Types
 export interface StructuredGenerationRequest {
   prompt: string;
-  schemaType: "userProfile" | "product" | "event";
 }
 
 export interface StructuredGenerationResponse {
-  data: any;
-  schemaType: string;
+  data: {
+    name: string;
+    age: number;
+    email: string;
+    interests: string[];
+    location: {
+      city: string;
+      country: string;
+    };
+  };
   metadata: {
     tokenCount: number;
     generationTime: number;
