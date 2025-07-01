@@ -47,26 +47,22 @@ public class ExpoFoundationModelsModule: Module {
   // MARK: - Foundation Models Availability Check
   
   private func getFoundationModelsAvailability() async -> FoundationModelsAvailability {
-    let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
     let availability = FoundationModelsAvailability()
-    availability.osVersion = osVersion
-    
+
     if #available(iOS 26.0, macOS 26.0, *) {
       let systemModel = SystemLanguageModel.default
       let isAvailable = systemModel.isAvailable
-      
+
       availability.isAvailable = isAvailable
       availability.deviceSupported = true
-      
+
       if !isAvailable {
         availability.reason = "Foundation Models not available on this device. Requires Apple Intelligence support."
       }
     } else {
-      availability.isAvailable = false
-      availability.deviceSupported = false
       availability.reason = "Foundation Models requires iOS 26.0+ or macOS 26.0+"
     }
-    
+
     return availability
   }
   

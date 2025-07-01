@@ -10,11 +10,14 @@ import Foundation
 
 struct FoundationModelsAvailability: Record {
   @Field
-  var isAvailable: Bool
+  var isAvailable: Bool = false
+  
   @Field
-  var reason: String?
+  var reason: String? = nil
+  
   @Field
-  var deviceSupported: Bool
+  var deviceSupported: Bool = false
+  
   @Field
-  var osVersion: String
+  var osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString
 }
