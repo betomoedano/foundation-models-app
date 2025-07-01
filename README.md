@@ -6,6 +6,8 @@ An experimental React Native project with a local native module that provides ac
 
 This project exposes Apple's native AI/ML capabilities to React Native applications, focusing on on-device processing with privacy-first design. The native module is developed locally within this project.
 
+## Watch the [video demo](https://x.com/betomoedano/status/1940035890476466420)
+
 ## Requirements
 
 - **iOS:** iOS 26+ (required for Foundation Models)
@@ -27,11 +29,9 @@ This project exposes Apple's native AI/ML capabilities to React Native applicati
    npx expo start
    ```
 
-3. Run on specific platform:
+3. Run on iOS:
    ```bash
-   npx expo run:ios     # iOS simulator
-   npx expo run:android # Android emulator
-   npx expo start --web # Web browser
+   npx expo run:ios
    ```
 
 ## Features
