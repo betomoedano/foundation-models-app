@@ -58,6 +58,12 @@ export default function Settings() {
             <Text style={styles.value}>{availability?.osVersion || "—"}</Text>
           </View>
         </View>
+
+        <View style={styles.banner}>
+          <Text size="caption" style={styles.bannerText}>
+            Powered by Expo Modules
+          </Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -92,5 +98,14 @@ const styles = StyleSheet.create({
   },
   value: {
     fontWeight: "500",
+  },
+  banner: {
+    marginTop: 40,
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  bannerText: {
+    opacity: 0.4,
+    fontWeight: "bold",
   },
 });
