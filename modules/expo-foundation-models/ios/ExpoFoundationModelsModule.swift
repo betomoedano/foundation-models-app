@@ -131,14 +131,12 @@ public class ExpoFoundationModelsModule: Module {
         locationRecord.country = profile.location.country
         record.location = locationRecord
         
-        let resultData = convertToDictionary(record)
-        
         let endTime = Date()
         let generationTime = endTime.timeIntervalSince(startTime)
         
-        response.data = resultData
+        response.data = record
         response.metadata = StructuredGenerationMetadata()
-        response.metadata.tokenCount = estimateTokenCount(from: resultData)
+        response.metadata.tokenCount = estimateTokenCountFromRecord(record)
         response.metadata.generationTime = generationTime
         
       } catch {
@@ -151,29 +149,9 @@ public class ExpoFoundationModelsModule: Module {
     return response
   }
   
-  // Helper function to estimate token count from structured data
-  private func estimateTokenCount(from data: [String: Any]) -> Int {
-    do {
-      let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
-      let jsonString = String(data: jsonData, encoding: .utf8) ?? ""
-      return jsonString.count / 4 // Rough estimation: 1 token ≈ 4 characters
-    } catch {
-      return 0
-    }
-  }
- 
- 
-  private func convertToDictionary(_ record: UserProfileRecord) -> [String: Any] {
-    return [
-      "name": record.name,
-      "age": record.age,
-      "email": record.email,
-      "interests": record.interests,
-      "location": [
-        "city": record.location.city,
-        "country": record.location.country
-      ]
-    ]
+  private func estimateTokenCountFromRecord(_ record: UserProfileRecord) -> Int {
+    let allText = "\(record.name) \(record.email) \(record.interests.joined(separator: " ")) \(record.location.city) \(record.location.country)"
+    return allText.count / 4 // Rough estimation: 1 token ≈ 4 characters
   }
   
   // MARK: - Streaming Implementation

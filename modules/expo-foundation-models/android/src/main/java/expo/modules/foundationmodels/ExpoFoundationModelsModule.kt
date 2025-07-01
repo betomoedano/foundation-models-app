@@ -22,7 +22,6 @@ class ExpoFoundationModelsModule : Module() {
       "isAvailable" to false,
       "deviceSupported" to false,
       "osVersion" to androidVersion,
-      "frameworkVersion" to null,
       "reason" to "Foundation Models framework is only available on iOS 26+ with Apple Intelligence. Android is not supported."
     )
   }

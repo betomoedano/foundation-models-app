@@ -70,7 +70,7 @@ struct StructuredGenerationMetadata: Record {
 
 struct StructuredGenerationResponse: Record {
   @Field
-  var data: [String: Any] = [:]
+  var data: UserProfileRecord
   
   @Field
   var metadata: StructuredGenerationMetadata

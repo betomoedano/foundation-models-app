@@ -11,7 +11,6 @@ class ExpoFoundationModelsModule extends NativeModule {
       isAvailable: false,
       deviceSupported: false,
       osVersion: `Web Browser - ${userAgent}`,
-      frameworkVersion: undefined,
       reason:
         "Foundation Models framework is only available on iOS 26+ with Apple Intelligence. Web platform is not supported.",
     };
