@@ -58,6 +58,15 @@ export interface StreamingChunk {
   sessionId: string;
 }
 
+export interface StreamingError {
+  sessionId: string;
+  error: string;
+}
+
+export interface StreamingCancelled {
+  sessionId: string;
+}
+
 export interface StreamingSession {
   sessionId: string;
   isActive: boolean;

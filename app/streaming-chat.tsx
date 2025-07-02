@@ -1,11 +1,8 @@
 import { Text } from "@/components/ThemedText";
 import { useGradualAnimation } from "@/components/useGradualAnimation";
 import { useThemedColors } from "@/components/useThemedColors";
-import ExpoFoundationModelsModule, {
-  StreamingChunk,
-  StreamingSession,
-} from "@/modules/expo-foundation-models";
-import React, { useEffect, useRef, useState } from "react";
+import { useFoundationModelsStreaming } from "@/hooks/useFoundationModelsStreaming";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,107 +16,22 @@ import Animated, { useAnimatedStyle } from "react-native-reanimated";
 export default function StreamingChatScreen() {
   const { height } = useGradualAnimation();
   const [prompt, setPrompt] = useState("");
-  const [streamingContent, setStreamingContent] = useState("");
-  const [session, setSession] = useState<StreamingSession | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [totalTokens, setTotalTokens] = useState(0);
-  const subscriptionsRef = useRef<any[]>([]);
+  const {
+    startStreaming,
+    cancelStreaming,
+    reset,
+    content,
+    loading,
+    error,
+    tokenCount,
+  } = useFoundationModelsStreaming();
   const colors = useThemedColors();
-
-  useEffect(() => {
-    // Set up event listeners
-    const chunkSub = ExpoFoundationModelsModule.addListener(
-      "onStreamingChunk",
-      (chunk: StreamingChunk) => {
-        if (chunk.isComplete) {
-          setSession(null);
-          setLoading(false);
-        } else {
-          setStreamingContent(chunk.content);
-          setTotalTokens(chunk.tokenCount);
-        }
-      }
-    );
-
-    const errorSub = ExpoFoundationModelsModule.addListener(
-      "onStreamingError",
-      ({ error }: { sessionId: string; error: string }) => {
-        setError(error);
-        setSession(null);
-        setLoading(false);
-      }
-    );
-
-    const cancelSub = ExpoFoundationModelsModule.addListener(
-      "onStreamingCancelled",
-      () => {
-        setSession(null);
-        setLoading(false);
-      }
-    );
-
-    subscriptionsRef.current = [chunkSub, errorSub, cancelSub];
-
-    return () => {
-      subscriptionsRef.current.forEach((sub) => sub.remove());
-    };
-  }, []);
 
   const keyboardPadding = useAnimatedStyle(() => {
     return {
       height: height.value,
     };
   }, []);
-
-  const startStreaming = async () => {
-    if (!prompt.trim()) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      setStreamingContent("");
-      setTotalTokens(0);
-
-      const newSession = await ExpoFoundationModelsModule.startStreamingSession(
-        {
-          prompt: prompt.trim(),
-        }
-      );
-
-      if ("error" in newSession && newSession.error) {
-        setError(newSession.error as string);
-        setLoading(false);
-      } else {
-        setSession(newSession);
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to start streaming"
-      );
-      setLoading(false);
-    }
-  };
-
-  const cancelStreaming = async () => {
-    if (session && ExpoFoundationModelsModule.cancelStreamingSession) {
-      try {
-        await ExpoFoundationModelsModule.cancelStreamingSession(
-          session.sessionId
-        );
-      } catch (err) {
-        console.error("Failed to cancel streaming:", err);
-      }
-    }
-  };
-
-  const clearChat = () => {
-    setPrompt("");
-    setStreamingContent("");
-    setTotalTokens(0);
-    setError(null);
-    setSession(null);
-  };
 
   return (
     <View style={styles.container}>
@@ -138,23 +50,23 @@ export default function StreamingChatScreen() {
             </View>
           )}
 
-          {(streamingContent || loading) && (
+          {(content || loading) && (
             <View style={styles.section}>
               <Text size="caption" style={styles.label}>
                 RESPONSE
               </Text>
               <Text style={styles.responseText}>
-                {streamingContent}
+                {content}
                 {loading && (
                   <Text style={[styles.cursor, { color: colors.text }]}>▊</Text>
                 )}
               </Text>
-              {totalTokens > 0 && (
+              {tokenCount > 0 && (
                 <View
                   style={[styles.metadata, { borderTopColor: colors.border }]}
                 >
                   <Text size="caption" style={styles.metadataText}>
-                    {totalTokens} tokens
+                    {tokenCount} tokens
                   </Text>
                 </View>
               )}
@@ -210,7 +122,7 @@ export default function StreamingChatScreen() {
                   pressed && styles.buttonPressed,
                   !prompt.trim() && styles.buttonDisabled,
                 ]}
-                onPress={startStreaming}
+                onPress={() => startStreaming(prompt)}
                 disabled={!prompt.trim()}
               >
                 <Text style={[styles.buttonText, { color: colors.buttonText }]}>
@@ -224,7 +136,7 @@ export default function StreamingChatScreen() {
                   { borderColor: colors.border },
                   pressed && styles.buttonPressed,
                 ]}
-                onPress={clearChat}
+                onPress={reset}
               >
                 <Text style={styles.buttonText}>Clear</Text>
               </Pressable>

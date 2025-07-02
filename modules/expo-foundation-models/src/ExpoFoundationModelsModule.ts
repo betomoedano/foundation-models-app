@@ -4,7 +4,9 @@ import {
   FoundationModelsAvailability,
   GenerationRequest,
   GenerationResponse,
+  StreamingCancelled,
   StreamingChunk,
+  StreamingError,
   StreamingRequest,
   StreamingSession,
   StructuredGenerationRequest,
@@ -34,11 +36,11 @@ declare class ExpoFoundationModelsModule extends NativeModule {
   ): { remove: () => void };
   addListener(
     eventName: "onStreamingError",
-    listener: (event: { sessionId: string; error: string }) => void
+    listener: (event: StreamingError) => void
   ): { remove: () => void };
   addListener(
     eventName: "onStreamingCancelled",
-    listener: (event: { sessionId: string }) => void
+    listener: (event: StreamingCancelled) => void
   ): { remove: () => void };
   addListener(
     eventName: "onStructuredStreamingChunk",
