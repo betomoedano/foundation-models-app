@@ -1,11 +1,8 @@
 import { Text } from "@/components/ThemedText";
 import { useGradualAnimation } from "@/components/useGradualAnimation";
 import { useThemedColors } from "@/components/useThemedColors";
-import ExpoFoundationModelsModule, {
-  StreamingSession,
-  StructuredStreamingChunk,
-} from "@/modules/expo-foundation-models";
-import React, { useEffect, useRef, useState } from "react";
+import { useFoundationModelsStructuredStreaming } from "@/hooks/useFoundationModelsStructuredStreaming";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -21,55 +18,18 @@ export default function StreamingStructuredScreen() {
   const [prompt, setPrompt] = useState(
     "Create a premium wireless headphone product"
   );
-  const [streamingData, setStreamingData] = useState<any>(null);
-  const [session, setSession] = useState<StreamingSession | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPartial, setIsPartial] = useState(false);
-  const subscriptionsRef = useRef<any[]>([]);
   const colors = useThemedColors();
+  
+  const {
+    data: streamingData,
+    loading,
+    error,
+    isPartial,
+    startStreaming,
+    cancelStreaming,
+    reset,
+  } = useFoundationModelsStructuredStreaming();
 
-  useEffect(() => {
-    // Set up event listeners
-    const chunkSub = ExpoFoundationModelsModule.addListener(
-      "onStructuredStreamingChunk",
-      (chunk: StructuredStreamingChunk) => {
-        if (chunk.isComplete) {
-          setSession(null);
-          setLoading(false);
-          setIsPartial(false);
-        } else {
-          setStreamingData(chunk.data);
-          setIsPartial(chunk.isPartial);
-        }
-      }
-    );
-
-    const errorSub = ExpoFoundationModelsModule.addListener(
-      "onStreamingError",
-      ({ error }: { sessionId: string; error: string }) => {
-        setError(error);
-        setSession(null);
-        setLoading(false);
-        setIsPartial(false);
-      }
-    );
-
-    const cancelSub = ExpoFoundationModelsModule.addListener(
-      "onStreamingCancelled",
-      () => {
-        setSession(null);
-        setLoading(false);
-        setIsPartial(false);
-      }
-    );
-
-    subscriptionsRef.current = [chunkSub, errorSub, cancelSub];
-
-    return () => {
-      subscriptionsRef.current.forEach((sub) => sub.remove());
-    };
-  }, []);
 
   const keyboardPadding = useAnimatedStyle(() => {
     return {
@@ -77,52 +37,14 @@ export default function StreamingStructuredScreen() {
     };
   }, []);
 
-  const startStreaming = async () => {
+  const handleStartStreaming = async () => {
     if (!prompt.trim()) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      setStreamingData(null);
-      setIsPartial(false);
-
-      const newSession =
-        await ExpoFoundationModelsModule.startStructuredStreamingSession({
-          prompt: prompt.trim(),
-        });
-
-      if ("error" in newSession && newSession.error) {
-        setError(newSession.error as string);
-        setLoading(false);
-      } else {
-        setSession(newSession);
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to start streaming"
-      );
-      setLoading(false);
-    }
-  };
-
-  const cancelStreaming = async () => {
-    if (session && ExpoFoundationModelsModule.cancelStreamingSession) {
-      try {
-        await ExpoFoundationModelsModule.cancelStreamingSession(
-          session.sessionId
-        );
-      } catch (err) {
-        console.error("Failed to cancel streaming:", err);
-      }
-    }
+    await startStreaming(prompt);
   };
 
   const clearChat = () => {
     setPrompt("Create a premium wireless headphone product");
-    setStreamingData(null);
-    setError(null);
-    setSession(null);
-    setIsPartial(false);
+    reset();
   };
 
   const formatProductData = (data: any) => {
@@ -263,7 +185,7 @@ export default function StreamingStructuredScreen() {
                   pressed && styles.buttonPressed,
                   !prompt.trim() && styles.buttonDisabled,
                 ]}
-                onPress={startStreaming}
+                onPress={handleStartStreaming}
                 disabled={!prompt.trim()}
               >
                 <Text style={[styles.buttonText, { color: colors.buttonText }]}>
