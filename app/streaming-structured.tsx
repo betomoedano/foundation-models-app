@@ -1,7 +1,6 @@
 import { Text } from "@/components/ThemedText";
 import { useGradualAnimation } from "@/components/useGradualAnimation";
 import { useThemedColors } from "@/components/useThemedColors";
-import { useFoundationModelsStructuredStreaming } from "@/hooks/useFoundationModelsStructuredStreaming";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -19,17 +18,22 @@ export default function StreamingStructuredScreen() {
     "Create a premium wireless headphone product"
   );
   const colors = useThemedColors();
-  
-  const {
-    data: streamingData,
-    loading,
-    error,
-    isPartial,
-    startStreaming,
-    cancelStreaming,
-    reset,
-  } = useFoundationModelsStructuredStreaming();
 
+  const [streamingData, setStreamingData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPartial, setIsPartial] = useState(false);
+  const [session, setSession] = useState<any | null>(null);
+
+  // const {
+  //   data: streamingData,
+  //   loading,
+  //   error,
+  //   isPartial,
+  //   startStreaming,
+  //   cancelStreaming,
+  //   reset,
+  // } = useFoundationModelsStructuredStreaming();
 
   const keyboardPadding = useAnimatedStyle(() => {
     return {
@@ -39,12 +43,12 @@ export default function StreamingStructuredScreen() {
 
   const handleStartStreaming = async () => {
     if (!prompt.trim()) return;
-    await startStreaming(prompt);
+    // await startStreaming(prompt);
   };
 
   const clearChat = () => {
     setPrompt("Create a premium wireless headphone product");
-    reset();
+    // reset();
   };
 
   const formatProductData = (data: any) => {
@@ -53,32 +57,47 @@ export default function StreamingStructuredScreen() {
     return (
       <View style={[styles.productCard, { borderColor: colors.border }]}>
         {data.name && (
-          <Text size="header" style={styles.productName}>{data.name}</Text>
+          <Text size="header" style={styles.productName}>
+            {data.name}
+          </Text>
         )}
-        
+
         {data.price && (
           <Text style={[styles.productPrice, { color: colors.accent }]}>
             ${data.price.toFixed(2)}
           </Text>
         )}
-        
+
         {data.category && (
-          <View style={[styles.categoryBadge, { backgroundColor: colors.buttonBackground }]}>
-            <Text size="caption" style={[styles.categoryText, { color: colors.buttonText }]}>
+          <View
+            style={[
+              styles.categoryBadge,
+              { backgroundColor: colors.buttonBackground },
+            ]}
+          >
+            <Text
+              size="caption"
+              style={[styles.categoryText, { color: colors.buttonText }]}
+            >
               {data.category.toUpperCase()}
             </Text>
           </View>
         )}
-        
+
         {data.description && (
-          <Text style={[styles.productDescription, { color: colors.textSecondary }]}>
+          <Text
+            style={[styles.productDescription, { color: colors.textSecondary }]}
+          >
             {data.description}
           </Text>
         )}
-        
+
         {data.features && data.features.length > 0 && (
           <View style={styles.featuresSection}>
-            <Text size="caption" style={[styles.featuresLabel, { color: colors.textSecondary }]}>
+            <Text
+              size="caption"
+              style={[styles.featuresLabel, { color: colors.textSecondary }]}
+            >
               FEATURES
             </Text>
             {data.features.map((feature: string, index: number) => (
@@ -89,15 +108,17 @@ export default function StreamingStructuredScreen() {
             ))}
           </View>
         )}
-        
+
         {data.inStock !== undefined && (
           <View style={styles.stockSection}>
-            <View style={[
-              styles.stockIndicator, 
-              { backgroundColor: data.inStock ? '#22c55e' : '#ef4444' }
-            ]} />
+            <View
+              style={[
+                styles.stockIndicator,
+                { backgroundColor: data.inStock ? "#22c55e" : "#ef4444" },
+              ]}
+            />
             <Text size="caption" style={styles.stockText}>
-              {data.inStock ? 'IN STOCK' : 'OUT OF STOCK'}
+              {data.inStock ? "IN STOCK" : "OUT OF STOCK"}
             </Text>
           </View>
         )}
@@ -215,7 +236,7 @@ export default function StreamingStructuredScreen() {
                   },
                   pressed && styles.buttonPressed,
                 ]}
-                onPress={cancelStreaming}
+                // onPress={cancelStreaming}
               >
                 <Text style={[styles.buttonText, { color: "white" }]}>
                   Cancel

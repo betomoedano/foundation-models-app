@@ -1,17 +1,9 @@
 import { Text } from "@/components/ThemedText";
-import ExpoFoundationModelsModule, {
-  FoundationModelsAvailability,
-} from "@/modules/expo-foundation-models";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 export default function Settings() {
-  const [availability, setAvailability] =
-    useState<FoundationModelsAvailability | null>(null);
-
-  useEffect(() => {
-    ExpoFoundationModelsModule.checkAvailability().then(setAvailability);
-  }, []);
+  const [availability, setAvailability] = useState<any | null>(null);
 
   return (
     <ScrollView

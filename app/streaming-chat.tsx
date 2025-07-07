@@ -1,7 +1,6 @@
 import { Text } from "@/components/ThemedText";
 import { useGradualAnimation } from "@/components/useGradualAnimation";
 import { useThemedColors } from "@/components/useThemedColors";
-import { useFoundationModelsStreaming } from "@/hooks/useFoundationModelsStreaming";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -16,15 +15,19 @@ import Animated, { useAnimatedStyle } from "react-native-reanimated";
 export default function StreamingChatScreen() {
   const { height } = useGradualAnimation();
   const [prompt, setPrompt] = useState("");
-  const {
-    startStreaming,
-    cancelStreaming,
-    reset,
-    content,
-    loading,
-    error,
-    tokenCount,
-  } = useFoundationModelsStreaming();
+  // const {
+  //   startStreaming,
+  //   cancelStreaming,
+  //   reset,
+  //   content,
+  //   loading,
+  //   error,
+  //   tokenCount,
+  // } = useFoundationModelsStreaming();
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tokenCount, setTokenCount] = useState(0);
   const colors = useThemedColors();
 
   const keyboardPadding = useAnimatedStyle(() => {
@@ -122,7 +125,7 @@ export default function StreamingChatScreen() {
                   pressed && styles.buttonPressed,
                   !prompt.trim() && styles.buttonDisabled,
                 ]}
-                onPress={() => startStreaming(prompt)}
+                // onPress={() => startStreaming(prompt)}
                 disabled={!prompt.trim()}
               >
                 <Text style={[styles.buttonText, { color: colors.buttonText }]}>
@@ -136,7 +139,7 @@ export default function StreamingChatScreen() {
                   { borderColor: colors.border },
                   pressed && styles.buttonPressed,
                 ]}
-                onPress={reset}
+                // onPress={reset}
               >
                 <Text style={styles.buttonText}>Clear</Text>
               </Pressable>
@@ -152,7 +155,7 @@ export default function StreamingChatScreen() {
                   },
                   pressed && styles.buttonPressed,
                 ]}
-                onPress={cancelStreaming}
+                // onPress={cancelStreaming}
               >
                 <Text style={[styles.buttonText, { color: "white" }]}>
                   Cancel

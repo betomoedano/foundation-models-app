@@ -1,8 +1,5 @@
 import { Text } from "@/components/ThemedText";
 import { useThemedColors } from "@/components/useThemedColors";
-import ExpoFoundationModelsModule, {
-  StructuredGenerationResponse,
-} from "@/modules/expo-foundation-models";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,13 +10,12 @@ import {
   View,
 } from "react-native";
 
-const DEFAULT_PROMPT = "Create a profile for a 25-year-old software developer from San Francisco";
+const DEFAULT_PROMPT =
+  "Create a profile for a 25-year-old software developer from San Francisco";
 
 export default function StructuredDataScreen() {
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [response, setResponse] = useState<StructuredGenerationResponse | null>(
-    null
-  );
+  const [response, setResponse] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const colors = useThemedColors();
@@ -32,15 +28,15 @@ export default function StructuredDataScreen() {
       setError(null);
       setResponse(null);
 
-      const result = await ExpoFoundationModelsModule.generateStructuredData({
-        prompt: prompt.trim(),
-      });
+      // const result = await ExpoFoundationModelsModule.generateStructuredData({
+      //   prompt: prompt.trim(),
+      // });
 
-      if ("error" in result && result.error) {
-        setError(result.error as string);
-      } else {
-        setResponse(result);
-      }
+      // if ("error" in result && result.error) {
+      //   setError(result.error as string);
+      // } else {
+      //   setResponse(result);
+      // }
     } catch (err) {
       setError(
         err instanceof Error

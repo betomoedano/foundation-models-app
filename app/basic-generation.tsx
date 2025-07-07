@@ -1,8 +1,5 @@
 import { Text } from "@/components/ThemedText";
 import { useThemedColors } from "@/components/useThemedColors";
-import ExpoFoundationModelsModule, {
-  GenerationResponse,
-} from "@/modules/expo-foundation-models";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -15,7 +12,7 @@ import {
 
 export default function BasicGenerationScreen() {
   const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState<GenerationResponse | null>(null);
+  const [response, setResponse] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const colors = useThemedColors();
@@ -28,15 +25,15 @@ export default function BasicGenerationScreen() {
       setError(null);
       setResponse(null);
 
-      const result = await ExpoFoundationModelsModule.generateText({
-        prompt: prompt.trim(),
-      });
+      // const result = await ExpoFoundationModelsModule.generateText({
+      //   prompt: prompt.trim(),
+      // });
 
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setResponse(result);
-      }
+      // if (result.error) {
+      //   setError(result.error);
+      // } else {
+      //   setResponse(result);
+      // }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate text");
     } finally {

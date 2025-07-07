@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Foundation App",
-    "slug": "foundation-models-app",
+    "name": "Foundation Starter",
+    "slug": "foundation-starter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "foundationmodelsapp",
+    "scheme": "foundationstarter",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.betoatexpo.foundation-models-app"
+      "bundleIdentifier": "com.betoatexpo.foundationstarter"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.betoatexpo.foundationmodelsapp"
+      "package": "com.betoatexpo.foundationstarter"
     },
     "web": {
       "bundler": "metro",
