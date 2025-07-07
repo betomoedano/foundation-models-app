@@ -6,6 +6,8 @@ node_modules/
 /ios
 /android
 
+/modules/expo-foundation-models/android/build
+
 # Expo
 .expo/
 dist/
