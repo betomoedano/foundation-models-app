@@ -44,9 +44,3 @@ This project exposes Apple's native AI/ML capabilities to React Native applicati
 - Basic text generation
 - Structured data generation
 - Streaming responses
-
-## Development
-
-- **Linting:** `npm run lint`
-- **Documentation:** See `CLAUDE.md` for AI assistant guidance
-- **Implementation Plan:** See `plans/` directory for detailed roadmap
