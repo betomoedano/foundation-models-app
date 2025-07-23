@@ -1,5 +1,6 @@
 import { Text } from "@/components/ThemedText";
 import { useThemedColors } from "@/components/useThemedColors";
+import { useVoice } from "@/contexts/VoiceContext";
 import ExpoFoundationModelsModule, {
   GenerationResponse,
 } from "@/modules/expo-foundation-models";
@@ -19,6 +20,7 @@ export default function BasicGenerationScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const colors = useThemedColors();
+  const { speak, stop, isSpeaking } = useVoice();
 
   const generateText = async () => {
     if (!prompt.trim()) return;
@@ -137,9 +139,28 @@ export default function BasicGenerationScreen() {
 
         {response && !loading && (
           <View style={styles.section}>
-            <Text size="caption" style={styles.label}>
-              RESPONSE
-            </Text>
+            <View style={styles.responseHeader}>
+              <Text size="caption" style={styles.label}>
+                RESPONSE
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.speakButton,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => {
+                  if (isSpeaking) {
+                    stop();
+                  } else {
+                    speak(response.content);
+                  }
+                }}
+              >
+                <Text style={styles.speakButtonText}>
+                  {isSpeaking ? "Stop" : "Speak"}
+                </Text>
+              </Pressable>
+            </View>
             <Text style={styles.responseText}>{response.content}</Text>
 
             <View style={[styles.metadata, { borderTopColor: colors.border }]}>
@@ -216,6 +237,21 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
+  },
+  responseHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 12,
+  },
+  speakButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  speakButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    opacity: 0.8,
   },
   responseText: {
     fontSize: 16,

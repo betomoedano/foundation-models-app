@@ -36,7 +36,9 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      ["react-native-bottom-tabs"],
+      [
+        "react-native-bottom-tabs"
+      ],
       [
         "expo-build-properties",
         {
@@ -44,7 +46,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,17 +1,27 @@
 import { Text } from "@/components/ThemedText";
+import { useThemedColors } from "@/components/useThemedColors";
+import { useVoice } from "@/contexts/VoiceContext";
 import ExpoFoundationModelsModule, {
   FoundationModelsAvailability,
 } from "@/modules/expo-foundation-models";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 export default function Settings() {
   const [availability, setAvailability] =
     useState<FoundationModelsAvailability | null>(null);
+  const colors = useThemedColors();
+  const { voices, selectedVoice, setSelectedVoice, speak, stop } = useVoice();
 
   useEffect(() => {
     ExpoFoundationModelsModule.checkAvailability().then(setAvailability);
   }, []);
+
+  const handleVoiceSelect = (voice: typeof voices[0] | null) => {
+    stop();
+    setSelectedVoice(voice);
+    speak("Expo Modules are the best", voice);
+  };
 
   return (
     <ScrollView
@@ -59,6 +69,56 @@ export default function Settings() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <Text size="caption" style={styles.sectionTitle}>
+            VOICE SELECTION
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.voiceList}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.voiceItem,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: !selectedVoice
+                      ? colors.selected
+                      : "transparent",
+                  },
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => handleVoiceSelect(null)}
+              >
+                <Text style={styles.voiceText}>Default</Text>
+              </Pressable>
+              {voices.slice(0, 10).map((voice) => (
+                <Pressable
+                  key={voice.identifier}
+                  style={({ pressed }) => [
+                    styles.voiceItem,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor:
+                        selectedVoice?.identifier === voice.identifier
+                          ? colors.selected
+                          : "transparent",
+                    },
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => handleVoiceSelect(voice)}
+                >
+                  <Text style={styles.voiceText}>{voice.name}</Text>
+                  <Text size="caption" style={styles.voiceLanguage}>
+                    {voice.language}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+          <Text size="caption" style={styles.voiceHint}>
+            {voices.length > 10 ? `Showing 10 of ${voices.length} voices` : `${voices.length} voices available`}
+          </Text>
+        </View>
+
         <View style={styles.banner}>
           <Text size="caption" style={styles.bannerText}>
             Powered by Expo Modules
@@ -98,6 +158,33 @@ const styles = StyleSheet.create({
   },
   value: {
     fontWeight: "500",
+  },
+  voiceList: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  voiceItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  voiceText: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  voiceLanguage: {
+    opacity: 0.6,
+  },
+  voiceHint: {
+    opacity: 0.5,
+    marginTop: 12,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   banner: {
     marginTop: 40,
