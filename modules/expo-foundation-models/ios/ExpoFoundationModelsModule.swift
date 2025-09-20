@@ -198,12 +198,12 @@ public class ExpoFoundationModelsModule: Module {
             // We'll send the full content and let JS handle it
             
             // Estimate total tokens for the full content
-            let currentTokens = currentContent.count / 4
+            let currentTokens = currentContent.content.count / 4
             
             // Send the full content as a chunk event
             let chunkEvent = StreamingChunkEvent()
             chunkEvent.sessionId = sessionId
-            chunkEvent.content = currentContent
+            chunkEvent.content = currentContent.content
             chunkEvent.isComplete = false
             chunkEvent.tokenCount = currentTokens
             sendEvent("onStreamingChunk", chunkEvent.toDictionary())
@@ -280,6 +280,11 @@ public class ExpoFoundationModelsModule: Module {
       // Create a new language model session
       let languageSession = LanguageModelSession()
       
+      let prompt = """
+          \(request.prompt)
+          Give it a real name, price, category, description, features, and inStock.
+          """
+      
       // Store the session
       streamingSessions[sessionId] = languageSession
       
@@ -288,30 +293,26 @@ public class ExpoFoundationModelsModule: Module {
         do {
           // Stream Product generation (keeping it simple)
           let stream = languageSession.streamResponse(
+            to: prompt,
             generating: Product.self,
-            options: GenerationOptions(sampling: .greedy),
             includeSchemaInPrompt: false,
-          ) {
-            request.prompt
-            "Give it a real name, price, category, description, features, and inStock"
-          }
+            options: GenerationOptions(sampling: .greedy)
+          )
           
-          for try await partialProduct in stream {
-            // Check if task is cancelled
-            if Task.isCancelled {
-              throw CancellationError()
-            }
+          for try await snapshot in stream {
+            if Task.isCancelled { throw CancellationError() }
             
-            // Convert partial product to dictionary
-            let productData = partialProductToDictionary(partialProduct)
+            // Extract the partially generated Product
+            let partial = snapshot.content   // <- This is Product.PartiallyGenerated
             
-            // Send structured chunk event
+            let productData = partialProductToDictionary(partial)
+            
             let structuredEvent = StructuredStreamingChunkEvent()
             structuredEvent.sessionId = sessionId
             structuredEvent.data = productData
             structuredEvent.schemaType = "product"
             structuredEvent.isComplete = false
-            structuredEvent.isPartial = true // Always partial until stream completes
+            structuredEvent.isPartial = true
             sendEvent("onStructuredStreamingChunk", structuredEvent.toDictionary())
           }
           

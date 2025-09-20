@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.betoatexpo.foundation-models-app"
+      "bundleIdentifier": "com.betoatexpo.foundation-models-app",
+      "appleTeamId": "T2A8YY9YDW"
     },
     "android": {
       "adaptiveIcon": {
@@ -47,7 +48,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
