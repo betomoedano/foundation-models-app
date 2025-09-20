@@ -4,6 +4,8 @@ An experimental React Native project with a local native module that provides ac
 
 https://github.com/user-attachments/assets/41c6d2f0-b694-4348-99cb-adc6717c9fa8
 
+The icon of this app was generated using [snapai](https://codewithbeto.dev/tools/snapAI)
+
 ## Overview
 
 This project exposes Apple's native AI/ML capabilities to React Native applications, focusing on on-device processing with privacy-first design. The native module is developed locally within this project.
