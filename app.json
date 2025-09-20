@@ -10,8 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.betoatexpo.foundation-models-app",
-      "appleTeamId": "T2A8YY9YDW"
+      "bundleIdentifier": "dev.codewithbeto.foundationmodelsapp",
+      "appleTeamId": "T2A8YY9YDW",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.betoatexpo.foundationmodelsapp"
+      "package": "dev.codewithbeto.foundationmodelsapp"
     },
     "web": {
       "bundler": "metro",
@@ -37,9 +40,7 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      [
-        "react-native-bottom-tabs"
-      ],
+      ["react-native-bottom-tabs"],
       [
         "expo-build-properties",
         {
@@ -53,6 +54,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b2978c5-e2a5-40f8-bfd3-4af062acbfb7"
+      }
     }
   }
 }
